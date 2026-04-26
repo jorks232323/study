@@ -150,6 +150,127 @@ button.danger:hover { background: #fcf5f5; }
 }
 .forgive b { color: #8a6f3a; }
 .forgive.show { display: block; }
+
+/* Depth pill on blocks */
+.depth-pill {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #d6d9e0; cursor: pointer; border: none; padding: 0;
+  display: block; margin: 0 auto;
+  transition: transform 0.1s;
+}
+.depth-pill:hover { transform: scale(1.2); }
+.depth-pill.deep { background: #2d5a3d; }
+.depth-pill.shallow { background: #6080a0; }
+.block { grid-template-columns: 22px 80px 1fr 80px 28px !important; }
+
+/* Calendar view */
+.cal-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px; flex-wrap: wrap; gap: 8px;
+}
+.cal-stats { font-size: 12px; color: #5a6677; display: flex; gap: 14px; flex-wrap: wrap; }
+.cal-stats .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.cal-stats .dot.deep { background: #2d5a3d; }
+.cal-stats .dot.shallow { background: #6080a0; }
+.cal-stats .dot.untagged { background: #aab0b8; }
+.cal-grid {
+  position: relative;
+  border: 1px solid #e6e8ee;
+  border-radius: 8px;
+  background: white;
+  overflow: hidden;
+}
+.cal-hours { position: relative; }
+.cal-hour {
+  display: flex;
+  height: 50px;
+  border-bottom: 1px solid #f3f4f7;
+}
+.cal-hour:last-child { border-bottom: none; }
+.cal-hour-label {
+  width: 56px; flex-shrink: 0;
+  padding: 4px 8px;
+  font-size: 11px; color: #8a92a0;
+  border-right: 1px solid #eef0f3;
+  background: #fafbfc;
+  text-align: right;
+}
+.cal-hour-slot { flex: 1; position: relative; }
+.cal-block {
+  position: absolute;
+  left: 60px; right: 8px;
+  background: #ebf3ee;
+  border-left: 3px solid #2d5a3d;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px; line-height: 1.3;
+  overflow: hidden;
+  cursor: pointer;
+  z-index: 2;
+  transition: filter 0.1s;
+}
+.cal-block:hover { filter: brightness(0.97); }
+.cal-block.shallow { background: #eef2f7; border-left-color: #6080a0; }
+.cal-block.untagged { background: #f3f4f7; border-left-color: #aab0b8; }
+.cal-block.done { opacity: 0.5; text-decoration: line-through; }
+.cal-block .cal-block-time { color: #6b7585; font-size: 10px; margin-bottom: 2px; }
+.cal-now {
+  position: absolute; left: 56px; right: 0;
+  height: 2px; background: #c33;
+  z-index: 5; pointer-events: none;
+}
+.cal-now::before {
+  content: ''; position: absolute;
+  left: 0; top: -4px;
+  width: 10px; height: 10px;
+  background: #c33; border-radius: 50%;
+}
+.cal-empty {
+  text-align: center; padding: 30px;
+  color: #8a92a0; font-size: 13px;
+}
+
+/* Shutdown ritual */
+.ritual-step {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid #f3f4f7;
+  font-size: 13px;
+}
+.ritual-step:last-child { border-bottom: none; }
+.ritual-step input[type="checkbox"] {
+  width: 18px; height: 18px; accent-color: #2d5a3d;
+  cursor: pointer; flex-shrink: 0;
+}
+.ritual-step.done label { color: #8a92a0; text-decoration: line-through; }
+.shutdown-complete {
+  margin-top: 12px; padding: 14px; border-radius: 8px;
+  background: #2d5a3d; color: white; text-align: center;
+  font-weight: 600; cursor: pointer; border: none; width: 100%;
+  font-family: inherit; font-size: 14px;
+  opacity: 0.4; transition: opacity 0.2s;
+}
+.shutdown-complete.ready { opacity: 1; cursor: pointer; }
+.shutdown-complete.fired { background: #1a2030; }
+
+/* Scoreboard */
+.score-row {
+  display: flex; gap: 6px; margin-top: 10px;
+  align-items: flex-end;
+}
+.score-bar {
+  flex: 1; min-width: 18px;
+  background: #eef0f3; border-radius: 3px 3px 0 0;
+  position: relative;
+  display: flex; flex-direction: column; justify-content: flex-end;
+}
+.score-bar .deep-fill { background: #2d5a3d; border-radius: 3px 3px 0 0; }
+.score-bar .shallow-fill { background: #6080a0; }
+.score-bar-label { font-size: 10px; color: #8a92a0; text-align: center; padding-top: 2px; }
+.score-target {
+  position: absolute; left: 0; right: 0;
+  border-top: 1px dashed #c33;
+  pointer-events: none;
+}
 </style>
 </head>
 <body>
@@ -161,8 +282,9 @@ button.danger:hover { background: #fcf5f5; }
 
   <div class="tabs">
     <button class="tab active" data-tab="today">Today</button>
-    <button class="tab" data-tab="plans">My If-Then Plans</button>
-    <button class="tab" data-tab="review">End-of-Day Review</button>
+    <button class="tab" data-tab="calendar">Calendar</button>
+    <button class="tab" data-tab="plans">If-Then Plans</button>
+    <button class="tab" data-tab="review">Shutdown</button>
     <button class="tab" data-tab="history">History</button>
     <button class="tab" data-tab="why">Why this works</button>
   </div>
@@ -205,8 +327,45 @@ button.danger:hover { background: #fcf5f5; }
       <button class="ghost" id="clearToday">Reset</button>
     </div>
 
+    <div class="card" style="margin-top:14px">
+      <h2>4. Send blocks to your calendar</h2>
+      <div class="why">One-way export. Pick whichever fits the device you're on. The .ics file works in Google Calendar, Apple Calendar (Mac/iPhone), Outlook, and Apple Reminders.</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+        <button class="primary" id="downloadIcs">Download .ics for today</button>
+        <button class="ghost" id="downloadIcsTodo">Download as Reminders (.ics todos)</button>
+      </div>
+      <div style="font-size:12px; color:#6b7585; margin-bottom:6px;">Or add each block straight to Google Calendar:</div>
+      <div id="gcalLinks"><span style="color:#8a92a0; font-size:12px;">Fill in block times + tasks above to see one-click Google links.</span></div>
+      <div class="why" style="margin-top:10px">
+        <b>Apple Calendar / Reminders:</b> double-click the downloaded .ics on Mac, or tap-and-hold on iPhone &rarr; "Open in Calendar" / "Open in Reminders".<br>
+        <b>Google Calendar (web):</b> Settings &rarr; Import &amp; export &rarr; Import the .ics. Or just use the one-click links above.
+      </div>
+    </div>
+
     <div class="forgive" id="forgive">
       <b>It's okay.</b> Sirois &amp; Pychyl (2013) found that self-forgiveness for past procrastination <i>reduces</i> future procrastination, beating yourself up makes it worse. Pick the next block and start there.
+    </div>
+  </div>
+
+  <div class="panel" id="panel-calendar">
+    <div class="research-note">
+      Newport's <b>"schedule every minute"</b> rule (Deep Work, Rule #4): <i>"Your goal is not to stick to a given schedule at all costs; it's instead to maintain, at all times, a thoughtful say in what you're doing with your time going forward, even if these decisions are reworked again and again as the day unfolds."</i>
+    </div>
+
+    <div class="card">
+      <div class="cal-toolbar">
+        <div>
+          <h2 id="cal-date" style="margin:0">Today</h2>
+          <div class="cal-stats" id="cal-stats" style="margin-top:4px"></div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="ghost" id="cal-replan" title="Cross out remaining blocks and re-time them from now">Replan from now</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="why" style="margin-top:10px">
+        <b>Tag each block</b> on the Today tab with the colored dot: green = deep work (cognitively demanding, pushes your limits), blue = shallow (logistical, easy to replicate). Newport recommends novices target <b>~1 hr/day deep work</b>, working up to <b>~4 hrs/day max</b>.
+      </div>
     </div>
   </div>
 
@@ -276,7 +435,14 @@ button.danger:hover { background: #fcf5f5; }
 
   <div class="panel" id="panel-review">
     <div class="research-note">
-      Progress monitoring is the second-strongest research-backed lever (Harkin et al. 2016 meta-analysis of 138 studies, in Sheeran &amp; Webb): writing down what you did, especially where you can see it later, produces real behavior change. <b>Don't skip this even on bad days</b>, avoiding monitoring (the "ostrich problem") is what kills the effect.
+      Two evidence stacks meet here. <b>Progress monitoring</b> (Harkin et al. 2016, 138 studies in Sheeran &amp; Webb) is the second-strongest research-backed lever after if-then plans. <b>Newport's shutdown ritual</b> (Deep Work, Rule #1, "Be Lazy") releases the Zeigarnik effect so unfinished tasks stop dominating your evening attention.
+    </div>
+
+    <div class="card">
+      <h2>Newport's shutdown ritual</h2>
+      <div class="why">10–15 min at the end of the work day. Habits in 1–2 weeks. Each step is intentional.</div>
+      <div id="ritual-list"></div>
+      <button class="shutdown-complete" id="shutdownBtn">Shutdown complete.</button>
     </div>
 
     <div class="card">
@@ -293,11 +459,21 @@ button.danger:hover { background: #fcf5f5; }
   </div>
 
   <div class="panel" id="panel-history">
+    <div class="research-note">
+      4DX scoreboard (Deep Work, Rule #1, "Execute Like a Business"). The <b>lead measure</b> is hours spent in deep work — track the behavior you can change today, not the lag outcome (your grade) months later.
+    </div>
     <div class="stats">
       <div class="stat"><div class="stat-num" id="stat-streak">0</div><div class="stat-lbl">day streak</div></div>
+      <div class="stat"><div class="stat-num" id="stat-deep">0</div><div class="stat-lbl">deep hrs this week</div></div>
       <div class="stat"><div class="stat-num" id="stat-rate">-</div><div class="stat-lbl">avg block completion</div></div>
-      <div class="stat"><div class="stat-num" id="stat-days">0</div><div class="stat-lbl">days logged</div></div>
     </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2>Deep work scoreboard, last 7 days</h2>
+      <div class="why">Dashed red line = Newport's ~1 hr/day novice target. Push toward 2–4 hrs/day as a ceiling.</div>
+      <div class="score-row" id="score-row"></div>
+    </div>
+
     <div class="card" style="margin-top:14px">
       <h2>Last 14 days</h2>
       <div id="history-list" style="margin-top:8px">
@@ -321,8 +497,23 @@ button.danger:hover { background: #fcf5f5; }
       <p style="margin-top:10px; font-size:13px; color:#3d4753;">
         Sirois &amp; Pychyl (2013) add the kindness piece: procrastination is short-term mood repair, not laziness. Self-forgiveness for past missed sessions <i>reduces</i> future procrastination. So when a plan flops, log it, adjust the if-then, and move on.
       </p>
+      <p style="margin-top:14px; font-size:13px; color:#3d4753;">
+        <b>Cal Newport, <i>Deep Work</i> (2016)</b> stacks neatly on top. Where the if-then plans answer "how do I follow through?", Deep Work answers "what should the blocks contain?" Three ideas from the book are baked into this app:
+      </p>
+      <p style="margin-top:8px; font-size:13px; color:#3d4753;">
+        <b>1. Schedule every minute.</b> The empty hour is where intentions die. Newport gives every minute of the workday a job, in 30-min minimum blocks, in a notebook. The Calendar tab is the digital version. <i>"Your goal is not to stick to a given schedule at all costs; it's instead to maintain, at all times, a thoughtful say in what you're doing with your time going forward."</i> When a block breaks, you don't abandon the plan, you redraw it from now.
+      </p>
+      <p style="margin-top:10px; font-size:13px; color:#3d4753;">
+        <b>2. Deep vs shallow.</b> Deep work pushes your limits and is hard to replace. Shallow work is logistical and easy. Newport's heuristic: ask how many months it would take to train a smart college grad to do the task. Many months = deep, a week = shallow. Aim for <b>50–70% deep</b>; novices cap at ~1 hr/day of pure deep work, experts ~4 hrs.
+      </p>
+      <p style="margin-top:10px; font-size:13px; color:#3d4753;">
+        <b>3. Shutdown ritual.</b> Unfinished tasks dominate attention until they're written down with a plan (the Zeigarnik effect, Baumeister &amp; Masicampo). Newport's fix: a 5-step end-of-day routine ending in the literal phrase <i>"Shutdown complete."</i> Habit forms in 1–2 weeks. The Shutdown tab walks you through it.
+      </p>
+      <p style="margin-top:10px; font-size:13px; color:#3d4753;">
+        Bonus: Newport's 4DX scoreboard idea — track <b>lead measures</b> (hours of deep work this week) instead of <b>lag measures</b> (your final grade). The History tab is your scoreboard.
+      </p>
       <p style="margin-top:14px; font-size:12px; color:#6b7585;">
-        Sources: Sheeran &amp; Webb (2016) <i>The Intention-Behavior Gap</i>; Sheeran (2002) <i>Intention-Behaviour Relations</i>; Gollwitzer &amp; Sheeran (2006) <i>Implementation Intentions and Goal Attainment</i>; Sirois &amp; Pychyl (2013) <i>Procrastination and Short-Term Mood Regulation</i>.
+        Sources: Sheeran &amp; Webb (2016) <i>The Intention-Behavior Gap</i>; Sheeran (2002) <i>Intention-Behaviour Relations</i>; Gollwitzer &amp; Sheeran (2006) <i>Implementation Intentions and Goal Attainment</i>; Sirois &amp; Pychyl (2013) <i>Procrastination and Short-Term Mood Regulation</i>; Newport (2016) <i>Deep Work</i>.
       </p>
     </div>
   </div>
@@ -354,6 +545,8 @@ document.querySelectorAll('.tab').forEach(t => {
     t.classList.add('active');
     document.getElementById('panel-' + t.dataset.tab).classList.add('active');
     if (t.dataset.tab === 'history') renderHistory();
+    if (t.dataset.tab === 'calendar') renderCalendar();
+    if (t.dataset.tab === 'review') renderRitual();
   });
 });
 
@@ -394,10 +587,112 @@ function renderBlocks() {
       saveState();
       if (f === 'done') renderBlocks();
       checkForgive();
+      renderGcalLinks();
     });
   });
+  renderGcalLinks();
 }
 function escapeAttr(s) { return (s||'').replace(/"/g,'&quot;'); }
+
+// --- Calendar export ---
+function pad(n) { return String(n).padStart(2,'0'); }
+function fmtLocal(date, time) {
+  const [y,m,d] = date.split('-');
+  const [h,mi] = time.split(':');
+  return `${y}${m}${d}T${pad(h)}${pad(mi)}00`;
+}
+function fmtUTCNow() {
+  const d = new Date();
+  return d.getUTCFullYear() + pad(d.getUTCMonth()+1) + pad(d.getUTCDate())
+       + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + 'Z';
+}
+function escapeICS(s) {
+  return (s||'').replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n')
+                .replace(/;/g,'\\;').replace(/,/g,'\\,');
+}
+function validBlocks() {
+  const blocks = (state.today && state.today.blocks) || [];
+  return blocks.filter(b => b.task && b.task.trim() && b.start && b.end);
+}
+function buildICS(asTodos) {
+  const events = validBlocks();
+  if (!events.length) return null;
+  const date = todayStr();
+  const goal = (state.today && state.today.goal) || '';
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Study Plan Bridge//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH'
+  ];
+  events.forEach((b, i) => {
+    const uid = `${date}-${i}-${Math.random().toString(36).slice(2,8)}@studyplanbridge`;
+    const summary = escapeICS('Study: ' + b.task);
+    const description = goal ? escapeICS('Goal: ' + goal) : '';
+    if (asTodos) {
+      lines.push('BEGIN:VTODO');
+      lines.push('UID:' + uid);
+      lines.push('DTSTAMP:' + fmtUTCNow());
+      lines.push('DUE:' + fmtLocal(date, b.end));
+      lines.push('SUMMARY:' + summary);
+      if (description) lines.push('DESCRIPTION:' + description);
+      lines.push('STATUS:NEEDS-ACTION');
+      lines.push('END:VTODO');
+    } else {
+      lines.push('BEGIN:VEVENT');
+      lines.push('UID:' + uid);
+      lines.push('DTSTAMP:' + fmtUTCNow());
+      lines.push('DTSTART:' + fmtLocal(date, b.start));
+      lines.push('DTEND:' + fmtLocal(date, b.end));
+      lines.push('SUMMARY:' + summary);
+      if (description) lines.push('DESCRIPTION:' + description);
+      lines.push('END:VEVENT');
+    }
+  });
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
+}
+function downloadICS(asTodos) {
+  const ics = buildICS(asTodos);
+  if (!ics) { toast('Add some blocks with times and tasks first.'); return; }
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `study-plan-${todayStr()}${asTodos?'-todos':''}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+  toast(asTodos ? 'Reminders file downloaded.' : 'Calendar file downloaded.');
+}
+function gcalUrl(b) {
+  const date = todayStr();
+  const goal = (state.today && state.today.goal) || '';
+  const start = fmtLocal(date, b.start);
+  const end = fmtLocal(date, b.end);
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: 'Study: ' + b.task,
+    dates: `${start}/${end}`,
+  });
+  if (goal) params.set('details', 'Goal: ' + goal);
+  return 'https://calendar.google.com/calendar/render?' + params.toString();
+}
+function renderGcalLinks() {
+  const wrap = document.getElementById('gcalLinks');
+  if (!wrap) return;
+  const valid = validBlocks();
+  if (!valid.length) {
+    wrap.innerHTML = '<span style="color:#8a92a0; font-size:12px;">Fill in block times + tasks above to see one-click Google links.</span>';
+    return;
+  }
+  wrap.innerHTML = valid.map(b =>
+    `<a href="${gcalUrl(b)}" target="_blank" rel="noopener" style="display:inline-block; margin:4px 6px 0 0; padding:5px 10px; border:1px solid #d6d9e0; border-radius:4px; font-size:12px; color:#2d5a3d; text-decoration:none; background:#f6faf7;">+ ${escapeHTML(b.task)} <span style="color:#6b7585;">(${b.start})</span></a>`
+  ).join('');
+}
+document.getElementById('downloadIcs').addEventListener('click', () => downloadICS(false));
+document.getElementById('downloadIcsTodo').addEventListener('click', () => downloadICS(true));
 
 document.getElementById('addBlock').addEventListener('click', () => {
   ensureToday();
@@ -432,6 +727,7 @@ function hydrateToday() {
     ensureToday();
     state.today[id] = e.target.value;
     saveState();
+    if (id === 'goal') renderGcalLinks();
   });
 });
 
