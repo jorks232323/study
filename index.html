@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Plan Bridge</title>
+<meta name="description" content="A daily study planner built on intention-behavior gap research (Gollwitzer & Sheeran implementation intentions).">
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #faf9f6;
+  color: #1f2933;
+  line-height: 1.5;
+  font-size: 15px;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+header { margin-bottom: 8px; }
+h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; color: #1a2030; }
+.sub { color: #5a6677; font-size: 13px; margin-top: 4px; }
+.tabs {
+  display: flex; gap: 4px; margin: 22px 0 18px;
+  border-bottom: 1px solid #e3e6ec;
+  flex-wrap: wrap;
+}
+.tab {
+  padding: 10px 14px; cursor: pointer;
+  border: none; background: none; font-size: 14px; color: #5a6677;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  font-weight: 500;
+}
+.tab.active { color: #2d5a3d; border-bottom-color: #2d5a3d; }
+.tab:hover:not(.active) { color: #1f2933; }
+.panel { display: none; }
+.panel.active { display: block; }
+.card {
+  background: #ffffff;
+  border: 1px solid #e6e8ee;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.card h2 {
+  font-size: 15px; font-weight: 600; color: #1a2030;
+  margin-bottom: 4px;
+}
+.card .why {
+  font-size: 12px; color: #6b7585;
+  font-style: italic; margin-bottom: 12px;
+}
+.card .why b { color: #2d5a3d; font-style: normal; }
+label { display: block; font-size: 13px; color: #4a5360; font-weight: 500; margin-bottom: 5px; }
+input[type="text"], input[type="time"], textarea, select {
+  width: 100%;
+  border: 1px solid #d6d9e0; border-radius: 6px;
+  padding: 8px 10px; font-size: 14px; font-family: inherit;
+  background: #fcfcfd; color: #1f2933;
+  transition: border-color 0.15s;
+}
+input:focus, textarea:focus, select:focus { outline: none; border-color: #2d5a3d; }
+textarea { resize: vertical; min-height: 60px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.row.three { grid-template-columns: 1fr 1fr 2fr; }
+.row.full { grid-template-columns: 1fr; }
+button.primary {
+  background: #2d5a3d; color: white; border: none;
+  padding: 9px 18px; border-radius: 6px; font-size: 14px;
+  font-weight: 500; cursor: pointer; font-family: inherit;
+}
+button.primary:hover { background: #234a31; }
+button.ghost {
+  background: none; border: 1px solid #d6d9e0; color: #4a5360;
+  padding: 7px 12px; border-radius: 6px; font-size: 13px;
+  cursor: pointer; font-family: inherit;
+}
+button.ghost:hover { background: #f3f4f7; }
+button.danger { color: #a04040; border-color: #e0c0c0; }
+button.danger:hover { background: #fcf5f5; }
+
+.plan-line {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  font-size: 14px; line-height: 1.7;
+}
+.plan-line .lbl { color: #2d5a3d; font-weight: 600; }
+.plan-line input[type="text"] { flex: 1; min-width: 140px; padding: 5px 9px; }
+
+.block {
+  display: grid; grid-template-columns: 80px 1fr 80px 30px; gap: 8px;
+  align-items: center;
+  padding: 8px; border-radius: 6px; margin-bottom: 6px;
+  background: #f6f7f9;
+}
+.block.done { background: #ebf3ee; }
+.block.done .blk-task { text-decoration: line-through; color: #8a92a0; }
+.block input { background: white; padding: 5px 8px; font-size: 13px; }
+.block .blk-task { font-size: 14px; color: #1f2933; }
+.checkbox-big {
+  width: 22px; height: 22px; cursor: pointer; accent-color: #2d5a3d;
+}
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat {
+  background: #ffffff; border: 1px solid #e6e8ee;
+  border-radius: 8px; padding: 12px; text-align: center;
+}
+.stat-num { font-size: 24px; font-weight: 700; color: #2d5a3d; }
+.stat-lbl { font-size: 12px; color: #6b7585; margin-top: 2px; }
+
+.day-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid #eef0f3; font-size: 13px;
+}
+.day-row:last-child { border-bottom: none; }
+.day-bar-wrap {
+  width: 100%; background: #eef0f3; height: 6px; border-radius: 3px;
+  margin-top: 4px; overflow: hidden;
+}
+.day-bar { height: 100%; background: #2d5a3d; border-radius: 3px; }
+
+.research-note {
+  font-size: 12px; color: #6b7585; padding: 10px 12px;
+  background: #f3f6f4; border-left: 3px solid #2d5a3d;
+  border-radius: 4px; margin-bottom: 14px;
+}
+.research-note b { color: #2d5a3d; }
+
+.add-block-btn {
+  width: 100%; border: 1px dashed #c5cad3; background: #fafbfc;
+  padding: 8px; color: #5a6677; border-radius: 6px;
+  cursor: pointer; font-size: 13px; font-family: inherit;
+  margin-top: 4px;
+}
+.add-block-btn:hover { border-color: #2d5a3d; color: #2d5a3d; }
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #1a2030; color: white; padding: 10px 18px;
+  border-radius: 6px; font-size: 13px; opacity: 0;
+  transition: opacity 0.25s; pointer-events: none;
+  z-index: 100;
+}
+.toast.show { opacity: 1; }
+
+.forgive {
+  display: none;
+  background: #fdf6ec; border: 1px solid #e8d9b8;
+  padding: 12px; border-radius: 8px; margin-top: 12px;
+  font-size: 13px; color: #604c2a;
+}
+.forgive b { color: #8a6f3a; }
+.forgive.show { display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Study Plan Bridge</h1>
+    <div class="sub">A planner built on intention-behavior research. Your data stays in this browser.</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="today">Today</button>
+    <button class="tab" data-tab="plans">My If-Then Plans</button>
+    <button class="tab" data-tab="review">End-of-Day Review</button>
+    <button class="tab" data-tab="history">History</button>
+    <button class="tab" data-tab="why">Why this works</button>
+  </div>
+
+  <div class="panel active" id="panel-today">
+    <div class="research-note">
+      Research finding: forming a specific <b>if-then plan</b> produces a medium-to-large boost in goal attainment compared with just intending to study (<b>d = 0.65</b>, Gollwitzer &amp; Sheeran 2006, in Sheeran &amp; Webb 2016).
+    </div>
+
+    <div class="card">
+      <h2>1. Today's goal</h2>
+      <div class="why">Make it a real outcome, not "study more." <b>Vague then-parts fail</b> (Sheeran 2002).</div>
+      <input type="text" id="goal" placeholder="e.g. Finish chapter 5 problems and review lecture notes from Mon">
+    </div>
+
+    <div class="card">
+      <h2>2. Time blocks for today</h2>
+      <div class="why">Plan in 25-50 min chunks with breaks. The <b>planning fallacy</b> (Sheeran &amp; Webb) means you'll underestimate how long things take, so schedule fewer, longer-than-you-think slots.</div>
+      <div id="blocks"></div>
+      <button class="add-block-btn" id="addBlock">+ Add a block</button>
+    </div>
+
+    <div class="card">
+      <h2>3. Your starter if-then plan for today</h2>
+      <div class="why">Implementation intention template from Gollwitzer &amp; Sheeran (2006): <b>"If situation Y occurs, then I will initiate response Z!"</b></div>
+      <div class="plan-line">
+        <span class="lbl">If</span> it is
+        <input type="text" id="startTime" placeholder="9:00 AM" style="max-width:120px">
+        at
+        <input type="text" id="startPlace" placeholder="my desk" style="max-width:160px">,
+      </div>
+      <div class="plan-line" style="margin-top:8px">
+        <span class="lbl">then I will</span>
+        <input type="text" id="startAction" placeholder="open chapter 5 and start problem 1">
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button class="primary" id="saveToday">Save today's plan</button>
+      <button class="ghost" id="clearToday">Reset</button>
+    </div>
+
+    <div class="forgive" id="forgive">
+      <b>It's okay.</b> Sirois &amp; Pychyl (2013) found that self-forgiveness for past procrastination <i>reduces</i> future procrastination, beating yourself up makes it worse. Pick the next block and start there.
+    </div>
+  </div>
+
+  <div class="panel" id="panel-plans">
+    <div class="research-note">
+      You told me your study days fall apart for four reasons. Below is one if-then plan per failure mode, drawn from the templates in <b>Gollwitzer &amp; Sheeran (2006), Table 1</b>. Edit each one to fit you. The cue (<b>If</b>) and the response (<b>then I will</b>) both have to be specific.
+    </div>
+
+    <div class="card">
+      <h2>A. For not starting on time</h2>
+      <div class="why">Use a <b>time + place</b> cue. Paper example: "If it is 5pm on Monday, then I will jog home from work."</div>
+      <div class="plan-line">
+        <span class="lbl">If</span> it is
+        <input type="text" data-plan="startWhen" placeholder="2:00 PM Sunday">
+        and I'm
+        <input type="text" data-plan="startWhere" placeholder="at my desk with my laptop on">
+      </div>
+      <div class="plan-line" style="margin-top:8px">
+        <span class="lbl">then I will</span>
+        <input type="text" data-plan="startThen" placeholder="immediately open my notes and read for 5 min, even if I don't feel ready">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>B. For phone &amp; social media distraction</h2>
+      <div class="why">Use an <b>internal-cue + replacement</b> response. Paper example: "If I start to think about my favorite snack, then I immediately ignore that thought!"</div>
+      <div class="plan-line">
+        <span class="lbl">If</span> I
+        <input type="text" data-plan="distractIf" placeholder="feel the urge to pick up my phone">
+      </div>
+      <div class="plan-line" style="margin-top:8px">
+        <span class="lbl">then I will</span>
+        <input type="text" data-plan="distractThen" placeholder="put it face-down in the drawer and read one more paragraph">
+      </div>
+      <div class="why" style="margin-top:8px">Tip: also pre-place the obstacle. Phone in another room beats willpower every time.</div>
+    </div>
+
+    <div class="card">
+      <h2>C. For when something else comes up</h2>
+      <div class="why">Anticipate the obstacle. Paper finding: pre-planned shielding responses produce <b>d = 0.77</b> against derailment (Gollwitzer &amp; Sheeran 2006).</div>
+      <div class="plan-line">
+        <span class="lbl">If</span>
+        <input type="text" data-plan="interruptIf" placeholder="someone messages me / a non-urgent task pops up">
+      </div>
+      <div class="plan-line" style="margin-top:8px">
+        <span class="lbl">then I will</span>
+        <input type="text" data-plan="interruptThen" placeholder="reply 'I'll get back to you at 4 PM' and finish my block">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>D. For unrealistic plans / running out of steam</h2>
+      <div class="why">Self-talk plan against ego depletion. Paper example: "If I have walked up one flight of stairs and see the elevator, then I will tell myself 'I can do it!'"</div>
+      <div class="plan-line">
+        <span class="lbl">If</span> I
+        <input type="text" data-plan="quitIf" placeholder="feel like quitting before the timer ends">
+      </div>
+      <div class="plan-line" style="margin-top:8px">
+        <span class="lbl">then I will</span>
+        <input type="text" data-plan="quitThen" placeholder="say to myself 'just 5 more minutes' and keep my hand on the page">
+      </div>
+      <div class="why" style="margin-top:8px">Also: cap your daily plan at <b>2/3 of what feels possible</b>. Sheeran &amp; Webb call this the planning fallacy, students chronically over-promise.</div>
+    </div>
+
+    <button class="primary" id="savePlans">Save my if-then plans</button>
+  </div>
+
+  <div class="panel" id="panel-review">
+    <div class="research-note">
+      Progress monitoring is the second-strongest research-backed lever (Harkin et al. 2016 meta-analysis of 138 studies, in Sheeran &amp; Webb): writing down what you did, especially where you can see it later, produces real behavior change. <b>Don't skip this even on bad days</b>, avoiding monitoring (the "ostrich problem") is what kills the effect.
+    </div>
+
+    <div class="card">
+      <h2>How did today actually go?</h2>
+      <label>One thing that worked</label>
+      <input type="text" id="rev-worked" placeholder="The 9 AM start cue actually got me started today">
+      <label style="margin-top:10px">One thing that derailed me</label>
+      <input type="text" id="rev-derailed" placeholder="Got pulled into a group chat at 11">
+      <label style="margin-top:10px">What if-then plan should I add or change tomorrow?</label>
+      <textarea id="rev-fix" placeholder="If a notification pops up before noon, then I will swipe it away without reading."></textarea>
+    </div>
+
+    <button class="primary" id="saveReview">Log today's review</button>
+  </div>
+
+  <div class="panel" id="panel-history">
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="stat-streak">0</div><div class="stat-lbl">day streak</div></div>
+      <div class="stat"><div class="stat-num" id="stat-rate">-</div><div class="stat-lbl">avg block completion</div></div>
+      <div class="stat"><div class="stat-num" id="stat-days">0</div><div class="stat-lbl">days logged</div></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>Last 14 days</h2>
+      <div id="history-list" style="margin-top:8px">
+        <div style="color:#6b7585; font-size:13px;">No history yet. Save a plan on the Today tab to start tracking.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-why">
+    <div class="card">
+      <h2>What the research says</h2>
+      <p style="margin-top:8px; font-size:13px; color:#3d4753;">
+        Four papers converge on the same finding: people don't fail to study because they lack motivation, they fail because <b>good intentions don't automatically translate into action</b>. Sheeran's 2002 meta-analysis showed that intentions explain only about a third of variance in actual behavior, the rest is the gap.
+      </p>
+      <p style="margin-top:10px; font-size:13px; color:#3d4753;">
+        The most reliable fix is the <b>implementation intention</b> (Gollwitzer): a literal "if X, then I will Y" sentence that mentally pre-commits a specific response to a specific cue. Across 94 studies the effect was <b>d = 0.65</b>, bigger than most psychological interventions ever produce.
+      </p>
+      <p style="margin-top:10px; font-size:13px; color:#3d4753;">
+        Three things make if-then plans work: (1) <b>specificity</b>, "study more" doesn't, "open chapter 5 at 9 AM at my desk" does; (2) <b>real cues</b>, time, place, or a specific feeling/urge, not abstract intent; (3) <b>strong underlying goal</b>, if you don't actually want to pass the exam, no formula helps.
+      </p>
+      <p style="margin-top:10px; font-size:13px; color:#3d4753;">
+        Sirois &amp; Pychyl (2013) add the kindness piece: procrastination is short-term mood repair, not laziness. Self-forgiveness for past missed sessions <i>reduces</i> future procrastination. So when a plan flops, log it, adjust the if-then, and move on.
+      </p>
+      <p style="margin-top:14px; font-size:12px; color:#6b7585;">
+        Sources: Sheeran &amp; Webb (2016) <i>The Intention-Behavior Gap</i>; Sheeran (2002) <i>Intention-Behaviour Relations</i>; Gollwitzer &amp; Sheeran (2006) <i>Implementation Intentions and Goal Attainment</i>; Sirois &amp; Pychyl (2013) <i>Procrastination and Short-Term Mood Regulation</i>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LS_KEY = 'studyPlanBridge_v1';
+const todayStr = () => new Date().toISOString().slice(0,10);
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { plans: {}, today: null, history: {} };
+}
+function saveState() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+    if (t.dataset.tab === 'history') renderHistory();
+  });
+});
+
+function defaultBlocks() {
+  return [
+    { start: '09:00', task: '', end: '09:50', done: false },
+    { start: '10:00', task: '', end: '10:50', done: false },
+    { start: '13:00', task: '', end: '13:50', done: false },
+  ];
+}
+function getBlocks() {
+  if (state.today && state.today.date === todayStr()) return state.today.blocks;
+  return defaultBlocks();
+}
+function renderBlocks() {
+  const blocks = getBlocks();
+  const wrap = document.getElementById('blocks');
+  wrap.innerHTML = '';
+  blocks.forEach((b, i) => {
+    const div = document.createElement('div');
+    div.className = 'block' + (b.done ? ' done' : '');
+    div.innerHTML = `
+      <input type="time" value="${b.start}" data-i="${i}" data-f="start">
+      <input type="text" placeholder="What you'll work on" value="${escapeAttr(b.task)}" data-i="${i}" data-f="task">
+      <input type="time" value="${b.end}" data-i="${i}" data-f="end">
+      <input type="checkbox" class="checkbox-big" ${b.done?'checked':''} data-i="${i}" data-f="done" title="Done">
+    `;
+    wrap.appendChild(div);
+  });
+  wrap.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const i = +inp.dataset.i, f = inp.dataset.f;
+      const blocks = getBlocks();
+      if (f === 'done') blocks[i].done = inp.checked;
+      else blocks[i][f] = inp.value;
+      ensureToday();
+      state.today.blocks = blocks;
+      saveState();
+      if (f === 'done') renderBlocks();
+      checkForgive();
+    });
+  });
+}
+function escapeAttr(s) { return (s||'').replace(/"/g,'&quot;'); }
+
+document.getElementById('addBlock').addEventListener('click', () => {
+  ensureToday();
+  state.today.blocks.push({ start:'', task:'', end:'', done:false });
+  saveState();
+  renderBlocks();
+});
+
+function ensureToday() {
+  if (!state.today || state.today.date !== todayStr()) {
+    state.today = {
+      date: todayStr(),
+      blocks: defaultBlocks(),
+      goal: '',
+      startTime: '',
+      startPlace: '',
+      startAction: '',
+    };
+  }
+}
+
+function hydrateToday() {
+  ensureToday();
+  document.getElementById('goal').value = state.today.goal || '';
+  document.getElementById('startTime').value = state.today.startTime || '';
+  document.getElementById('startPlace').value = state.today.startPlace || '';
+  document.getElementById('startAction').value = state.today.startAction || '';
+  renderBlocks();
+}
+['goal','startTime','startPlace','startAction'].forEach(id => {
+  document.getElementById(id).addEventListener('input', e => {
+    ensureToday();
+    state.today[id] = e.target.value;
+    saveState();
+  });
+});
+
+document.getElementById('saveToday').addEventListener('click', () => {
+  ensureToday();
+  const blocks = state.today.blocks || [];
+  const total = blocks.filter(b => b.task.trim()).length;
+  const done = blocks.filter(b => b.task.trim() && b.done).length;
+  state.history[todayStr()] = {
+    goal: state.today.goal,
+    total, done,
+    blocks: blocks.map(b => ({...b})),
+  };
+  saveState();
+  toast('Saved. Now go do block 1.');
+  checkForgive();
+});
+
+document.getElementById('clearToday').addEventListener('click', () => {
+  if (!confirm('Reset today\'s plan?')) return;
+  state.today = null;
+  ensureToday();
+  saveState();
+  hydrateToday();
+});
+
+function checkForgive() {
+  const f = document.getElementById('forgive');
+  if (!state.today) return;
+  const now = new Date();
+  const hour = now.getHours();
+  const blocks = state.today.blocks || [];
+  const missed = blocks.filter(b => {
+    if (!b.task.trim() || b.done || !b.end) return false;
+    const [h,m] = b.end.split(':').map(Number);
+    const blockEnd = h*60 + m;
+    const nowMin = hour*60 + now.getMinutes();
+    return nowMin > blockEnd;
+  }).length;
+  if (missed >= 2) f.classList.add('show'); else f.classList.remove('show');
+}
+
+function hydratePlans() {
+  document.querySelectorAll('[data-plan]').forEach(inp => {
+    inp.value = state.plans[inp.dataset.plan] || '';
+    inp.addEventListener('input', e => {
+      state.plans[inp.dataset.plan] = e.target.value;
+      saveState();
+    });
+  });
+}
+document.getElementById('savePlans').addEventListener('click', () => {
+  saveState();
+  toast('If-then plans saved. They live in this browser.');
+});
+
+document.getElementById('saveReview').addEventListener('click', () => {
+  ensureToday();
+  const review = {
+    worked: document.getElementById('rev-worked').value,
+    derailed: document.getElementById('rev-derailed').value,
+    fix: document.getElementById('rev-fix').value,
+  };
+  if (!state.history[todayStr()]) {
+    const blocks = state.today.blocks || [];
+    const total = blocks.filter(b => b.task.trim()).length;
+    const done = blocks.filter(b => b.task.trim() && b.done).length;
+    state.history[todayStr()] = {
+      goal: state.today.goal, total, done,
+      blocks: blocks.map(b => ({...b})),
+    };
+  }
+  state.history[todayStr()].review = review;
+  saveState();
+  document.getElementById('rev-worked').value = '';
+  document.getElementById('rev-derailed').value = '';
+  document.getElementById('rev-fix').value = '';
+  toast('Logged. Streak counts only when you log it.');
+});
+
+function renderHistory() {
+  const days = Object.keys(state.history).sort().reverse();
+  document.getElementById('stat-days').textContent = days.length;
+
+  let streak = 0;
+  const d = new Date();
+  while (true) {
+    const k = d.toISOString().slice(0,10);
+    const h = state.history[k];
+    if (h && (h.done > 0 || h.review)) { streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  document.getElementById('stat-streak').textContent = streak;
+
+  const rates = days.map(k => {
+    const h = state.history[k];
+    if (!h.total) return null;
+    return h.done / h.total;
+  }).filter(x => x !== null);
+  if (rates.length) {
+    const avg = rates.reduce((a,b)=>a+b,0) / rates.length;
+    document.getElementById('stat-rate').textContent = Math.round(avg*100) + '%';
+  }
+
+  const list = document.getElementById('history-list');
+  if (!days.length) return;
+  list.innerHTML = '';
+  days.slice(0, 14).forEach(k => {
+    const h = state.history[k];
+    const pct = h.total ? Math.round((h.done/h.total)*100) : 0;
+    const row = document.createElement('div');
+    row.className = 'day-row';
+    row.style.flexDirection = 'column';
+    row.style.alignItems = 'stretch';
+    row.innerHTML = `
+      <div style="display:flex; justify-content:space-between; gap:10px;">
+        <div style="font-weight:500;">${formatDate(k)}</div>
+        <div style="color:#6b7585;">${h.done}/${h.total} blocks &middot; ${pct}%</div>
+      </div>
+      ${h.goal ? `<div style="color:#5a6677; font-size:12px; margin-top:2px;">${escapeHTML(h.goal)}</div>` : ''}
+      <div class="day-bar-wrap"><div class="day-bar" style="width:${pct}%"></div></div>
+      ${h.review && h.review.fix ? `<div style="font-size:12px; color:#604c2a; margin-top:6px; font-style:italic;">Tomorrow: ${escapeHTML(h.review.fix)}</div>` : ''}
+    `;
+    list.appendChild(row);
+  });
+}
+function formatDate(k) {
+  const d = new Date(k + 'T00:00');
+  const opts = { weekday: 'short', month: 'short', day: 'numeric' };
+  return d.toLocaleDateString(undefined, opts);
+}
+function escapeHTML(s) {
+  return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+
+let toastT;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+hydrateToday();
+hydratePlans();
+checkForgive();
+setInterval(checkForgive, 60000);
+</script>
+</body>
+</html>
