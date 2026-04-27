@@ -4,597 +4,2091 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Study Plan Bridge</title>
-<meta name="description" content="A daily study planner built on intention-behavior gap research (Gollwitzer & Sheeran implementation intentions).">
+<meta name="description" content="A daily study planner built on intention-behavior gap research and Cal Newport's Deep Work.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Lora:ital,wght@0,500;0,600;0,700;1,400;1,500&family=Caveat:wght@500;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
 <style>
-:root { color-scheme: light; }
+:root {
+  color-scheme: light;
+  --bg: #e6dcc4;
+  --paper: #fbf6ea;
+  --paper-2: #f5efde;
+  --paper-3: #f0e8d2;
+  --ink: #2a2218;
+  --ink-mute: #6f6552;
+  --ink-faint: #948a76;
+  --line: #d9cfb4;
+  --line-soft: #ece4cf;
+  --accent: #7a5c2e;
+  --accent-soft: #c9a96b;
+  --gold: #b48e3c;
+  --gold-deep: #8a6a25;
+  --manuscript-blue: #1f3a5f;
+  --manuscript-blue-deep: #142544;
+  --illum-teal: #2c5e6e;
+  --red: #8b2e1f;
+  --red-soft: #a04434;
+  --green: #4a6b3e;
+  --green-deep: #2f4a26;
+  --blue: #4a647d;
+  --pencil: #6f665a;
+  --tape-yellow: rgba(232, 213, 107, 0.65);
+  --tape-kraft: rgba(201, 169, 97, 0.55);
+  --tape-blue: rgba(150, 175, 200, 0.5);
+  --shadow-paper: 0 1px 2px rgba(70,55,30,0.08),
+                  0 4px 14px rgba(70,55,30,0.07),
+                  0 14px 36px rgba(70,55,30,0.06);
+  --shadow-lift: 0 2px 4px rgba(70,55,30,0.10),
+                 0 8px 22px rgba(70,55,30,0.10),
+                 0 24px 50px rgba(70,55,30,0.07);
+  --display: 'Cormorant Garamond', 'Lora', Georgia, serif;
+  --serif: 'Lora', Georgia, "Times New Roman", serif;
+  --old: 'IM Fell English', 'Lora', Georgia, serif;
+  --hand: 'Caveat', 'Lora', cursive;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: #faf9f6;
-  color: #1f2933;
-  line-height: 1.5;
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
   font-size: 15px;
+  line-height: 1.55;
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
 }
-.wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
-header { margin-bottom: 8px; }
-h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; color: #1a2030; }
-.sub { color: #5a6677; font-size: 13px; margin-top: 4px; }
-.tabs {
-  display: flex; gap: 4px; margin: 22px 0 18px;
-  border-bottom: 1px solid #e3e6ec;
-  flex-wrap: wrap;
+/* Paper grain & subtle stains */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.55;
+  background-image:
+    radial-gradient(rgba(120,90,40,0.06) 1px, transparent 1px),
+    radial-gradient(rgba(120,90,40,0.04) 1px, transparent 1.2px),
+    radial-gradient(ellipse at 20% 30%, rgba(180,140,60,0.05), transparent 40%),
+    radial-gradient(ellipse at 80% 70%, rgba(140,90,40,0.04), transparent 40%);
+  background-size: 3px 3px, 7px 7px, 100% 100%, 100% 100%;
+  background-position: 0 0, 1px 2px, 0 0, 0 0;
 }
-.tab {
-  padding: 10px 14px; cursor: pointer;
-  border: none; background: none; font-size: 14px; color: #5a6677;
-  border-bottom: 2px solid transparent; margin-bottom: -1px;
-  font-weight: 500;
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 40px 22px 110px;
 }
-.tab.active { color: #2d5a3d; border-bottom-color: #2d5a3d; }
-.tab:hover:not(.active) { color: #1f2933; }
-.panel { display: none; }
-.panel.active { display: block; }
-.card {
-  background: #ffffff;
-  border: 1px solid #e6e8ee;
-  border-radius: 10px;
-  padding: 18px;
-  margin-bottom: 14px;
-}
-.card h2 {
-  font-size: 15px; font-weight: 600; color: #1a2030;
-  margin-bottom: 4px;
-}
-.card .why {
-  font-size: 12px; color: #6b7585;
-  font-style: italic; margin-bottom: 12px;
-}
-.card .why b { color: #2d5a3d; font-style: normal; }
-label { display: block; font-size: 13px; color: #4a5360; font-weight: 500; margin-bottom: 5px; }
-input[type="text"], input[type="time"], textarea, select {
-  width: 100%;
-  border: 1px solid #d6d9e0; border-radius: 6px;
-  padding: 8px 10px; font-size: 14px; font-family: inherit;
-  background: #fcfcfd; color: #1f2933;
-  transition: border-color 0.15s;
-}
-input:focus, textarea:focus, select:focus { outline: none; border-color: #2d5a3d; }
-textarea { resize: vertical; min-height: 60px; }
-.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-.row.three { grid-template-columns: 1fr 1fr 2fr; }
-.row.full { grid-template-columns: 1fr; }
-button.primary {
-  background: #2d5a3d; color: white; border: none;
-  padding: 9px 18px; border-radius: 6px; font-size: 14px;
-  font-weight: 500; cursor: pointer; font-family: inherit;
-}
-button.primary:hover { background: #234a31; }
-button.ghost {
-  background: none; border: 1px solid #d6d9e0; color: #4a5360;
-  padding: 7px 12px; border-radius: 6px; font-size: 13px;
-  cursor: pointer; font-family: inherit;
-}
-button.ghost:hover { background: #f3f4f7; }
-button.danger { color: #a04040; border-color: #e0c0c0; }
-button.danger:hover { background: #fcf5f5; }
 
-.plan-line {
-  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-  font-size: 14px; line-height: 1.7;
+/* ─── Illuminated Header ─── */
+header {
+  margin-bottom: 22px;
+  padding: 0 4px;
+  text-align: center;
+  position: relative;
 }
-.plan-line .lbl { color: #2d5a3d; font-weight: 600; }
-.plan-line input[type="text"] { flex: 1; min-width: 140px; padding: 5px 9px; }
-
-.block {
-  display: grid; grid-template-columns: 80px 1fr 80px 30px; gap: 8px;
+.title-row {
+  display: inline-flex;
   align-items: center;
-  padding: 8px; border-radius: 6px; margin-bottom: 6px;
-  background: #f6f7f9;
+  gap: 18px;
+  position: relative;
 }
-.block.done { background: #ebf3ee; }
-.block.done .blk-task { text-decoration: line-through; color: #8a92a0; }
-.block input { background: white; padding: 5px 8px; font-size: 13px; }
-.block .blk-task { font-size: 14px; color: #1f2933; }
-.checkbox-big {
-  width: 22px; height: 22px; cursor: pointer; accent-color: #2d5a3d;
+.title-orn {
+  flex-shrink: 0;
+  width: 70px; height: 36px;
+  opacity: 0.85;
 }
-
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.stat {
-  background: #ffffff; border: 1px solid #e6e8ee;
-  border-radius: 8px; padding: 12px; text-align: center;
+.title-orn.flip { transform: scaleX(-1); }
+h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 44px;
+  letter-spacing: 0.005em;
+  color: var(--manuscript-blue-deep);
+  line-height: 1.05;
+  margin: 0;
+  font-style: italic;
 }
-.stat-num { font-size: 24px; font-weight: 700; color: #2d5a3d; }
-.stat-lbl { font-size: 12px; color: #6b7585; margin-top: 2px; }
-
-.day-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 0; border-bottom: 1px solid #eef0f3; font-size: 13px;
+h1 .amp {
+  font-family: var(--display);
+  font-style: italic;
+  color: var(--gold-deep);
+  font-weight: 600;
 }
-.day-row:last-child { border-bottom: none; }
-.day-bar-wrap {
-  width: 100%; background: #eef0f3; height: 6px; border-radius: 3px;
-  margin-top: 4px; overflow: hidden;
-}
-.day-bar { height: 100%; background: #2d5a3d; border-radius: 3px; }
-
-.research-note {
-  font-size: 12px; color: #6b7585; padding: 10px 12px;
-  background: #f3f6f4; border-left: 3px solid #2d5a3d;
-  border-radius: 4px; margin-bottom: 14px;
-}
-.research-note b { color: #2d5a3d; }
-
-.add-block-btn {
-  width: 100%; border: 1px dashed #c5cad3; background: #fafbfc;
-  padding: 8px; color: #5a6677; border-radius: 6px;
-  cursor: pointer; font-size: 13px; font-family: inherit;
+header .sub {
+  color: var(--ink-mute);
+  font-size: 16px;
   margin-top: 4px;
+  font-family: var(--hand);
+  font-weight: 500;
+  letter-spacing: 0.015em;
+  transform: rotate(-0.6deg);
+  display: inline-block;
 }
-.add-block-btn:hover { border-color: #2d5a3d; color: #2d5a3d; }
-
-.toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-  background: #1a2030; color: white; padding: 10px 18px;
-  border-radius: 6px; font-size: 13px; opacity: 0;
-  transition: opacity 0.25s; pointer-events: none;
-  z-index: 100;
+header .rule {
+  display: block;
+  margin: 14px auto 0;
+  width: 220px; height: 14px;
+  opacity: 0.9;
 }
-.toast.show { opacity: 1; }
 
-.forgive {
+/* ─── Tabs (illuminated index tabs) ─── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 26px 0 28px;
+  padding: 0 4px 0;
+  border-bottom: 1.5px solid var(--gold);
+  flex-wrap: wrap;
+  position: relative;
+}
+.tabs::before, .tabs::after {
+  content: '✦';
+  color: var(--gold);
+  font-size: 11px;
+  position: absolute;
+  bottom: -7px;
+  background: var(--bg);
+  padding: 0 4px;
+}
+.tabs::before { left: -4px; }
+.tabs::after { right: -4px; }
+.tab {
+  background: transparent;
+  border: none;
+  padding: 11px 16px 11px;
+  cursor: pointer;
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink-mute);
+  letter-spacing: 0.005em;
+  position: relative;
+  margin-bottom: -1.5px;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  font-style: italic;
+}
+.tab:hover { color: var(--manuscript-blue); }
+.tab.active {
+  color: var(--manuscript-blue-deep);
+  border-bottom-color: var(--gold);
+  font-weight: 600;
+}
+.tab.active::after {
+  content: '◆';
+  position: absolute;
+  bottom: -10px; left: 50%;
+  transform: translateX(-50%);
+  color: var(--gold);
+  font-size: 10px;
+  background: var(--bg);
+  padding: 0 4px;
+}
+
+/* ─── Pages: paper sheets that animate on switch ─── */
+.pages {
+  position: relative;
+  min-height: 500px;
+}
+.page {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  pointer-events: none;
   display: none;
-  background: #fdf6ec; border: 1px solid #e8d9b8;
-  padding: 12px; border-radius: 8px; margin-top: 12px;
-  font-size: 13px; color: #604c2a;
 }
-.forgive b { color: #8a6f3a; }
-.forgive.show { display: block; }
+.page.active {
+  position: relative;
+  pointer-events: auto;
+  display: block;
+  animation: pageIn 0.45s cubic-bezier(0.32, 0.72, 0.35, 1) forwards;
+}
+.page.leaving {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  animation: pageOut 0.32s cubic-bezier(0.55, 0.05, 0.7, 0.35) forwards;
+}
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateX(34px) rotate(0.45deg) scale(0.985);
+    filter: blur(0.5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotate(0deg) scale(1);
+    filter: blur(0);
+  }
+}
+@keyframes pageOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) rotate(0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30px) rotate(-0.4deg) scale(0.985);
+    filter: blur(0.5px);
+  }
+}
 
-/* Depth pill on blocks */
+/* ─── Sheets (paper with personality) ─── */
+.sheet {
+  background: var(--paper);
+  border: 1px solid rgba(120,90,40,0.10);
+  border-radius: 4px;
+  padding: 26px 28px;
+  margin-bottom: 22px;
+  box-shadow: var(--shadow-paper);
+  position: relative;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 27px,
+      rgba(80,100,140,0.04) 28px
+    );
+}
+/* Slight rotation per sheet for handmade feel */
+.sheet:nth-child(2n) { transform: rotate(-0.18deg); }
+.sheet:nth-child(3n) { transform: rotate(0.22deg); }
+.sheet:nth-child(5n) { transform: rotate(-0.12deg); }
+
+.sheet h2 {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--manuscript-blue-deep);
+  margin-bottom: 4px;
+  letter-spacing: -0.005em;
+  font-style: italic;
+  line-height: 1.1;
+}
+/* Drop cap decoration */
+.sheet h2::first-letter {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.05em;
+  color: var(--gold-deep);
+  font-style: italic;
+}
+.sheet .sub-note {
+  font-size: 14px;
+  color: var(--ink-mute);
+  font-style: italic;
+  font-family: var(--serif);
+  margin-bottom: 18px;
+  line-height: 1.55;
+  position: relative;
+  padding-left: 14px;
+}
+.sheet .sub-note::before {
+  content: '❦';
+  position: absolute;
+  left: 0; top: 0;
+  color: var(--gold);
+  font-size: 12px;
+  font-style: normal;
+}
+.sheet .sub-note b { color: var(--manuscript-blue); font-style: normal; font-weight: 600; }
+
+/* Masking tape variations */
+.sheet.taped::before {
+  content: '';
+  position: absolute;
+  top: -10px; left: 50%;
+  transform: translateX(-50%) rotate(-1.8deg);
+  width: 92px; height: 22px;
+  background: var(--tape-yellow);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 4px, rgba(255,255,255,0.15) 4px 8px
+  );
+  border-radius: 1px;
+  box-shadow:
+    0 1px 3px rgba(70,55,30,0.12),
+    inset 0 -1px 0 rgba(0,0,0,0.05);
+  z-index: 4;
+}
+.sheet.taped-kraft::before { background: var(--tape-kraft); }
+.sheet.taped-blue::before { background: var(--tape-blue); }
+.sheet.taped-left::before { left: 36px; transform: rotate(-3deg); width: 70px; }
+.sheet.taped-right::before { left: auto; right: 36px; transform: rotate(2deg); width: 70px; }
+
+/* Paperclip decoration */
+.sheet.clipped::after {
+  content: '';
+  position: absolute;
+  top: -14px; left: 26px;
+  width: 22px; height: 50px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 50'><path d='M 11 4 Q 4 4 4 12 L 4 38 Q 4 46 11 46 Q 18 46 18 38 L 18 16 Q 18 10 13 10 Q 8 10 8 16 L 8 36' stroke='%23807a6e' stroke-width='1.6' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.18));
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Ornamental corner flourish */
+.sheet.ornamented {
+  padding-top: 38px;
+}
+.sheet.ornamented > .corner-orn {
+  position: absolute;
+  top: 14px; right: 18px;
+  width: 50px; height: 28px;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+/* Marginalia note (handwritten side-comment) */
+.marginalia {
+  position: absolute;
+  font-family: var(--hand);
+  color: var(--red);
+  font-size: 17px;
+  transform: rotate(-3deg);
+  pointer-events: none;
+  line-height: 1.1;
+  max-width: 130px;
+}
+.marginalia.right {
+  right: -8px;
+  top: 28px;
+}
+.marginalia.bottom-left {
+  left: 14px; bottom: -10px;
+  transform: rotate(-1.5deg);
+  background: var(--paper);
+  padding: 2px 6px;
+}
+.marginalia .arrow {
+  display: inline-block;
+  font-size: 14px;
+  margin-right: 3px;
+}
+@media (max-width: 720px) {
+  .marginalia { display: none; }
+}
+
+/* Ornamental section divider */
+.divider {
+  display: block;
+  margin: 6px auto 22px;
+  width: 240px;
+  height: 22px;
+  opacity: 0.75;
+}
+
+/* Inputs */
+label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 6px;
+}
+input[type="text"], input[type="time"], input[type="number"], textarea, select {
+  width: 100%;
+  background: rgba(255, 252, 240, 0.7);
+  border: none;
+  border-bottom: 1.5px solid var(--line);
+  padding: 6px 4px 8px;
+  font-family: var(--sans);
+  font-size: 15px;
+  color: var(--ink);
+  border-radius: 0;
+  transition: border-color 0.2s;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
+
+/* Buttons (manuscript style) */
+button.btn {
+  background: var(--manuscript-blue-deep);
+  color: var(--paper);
+  border: 1px solid var(--gold);
+  padding: 10px 22px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-family: var(--display);
+  font-weight: 600;
+  font-style: italic;
+  cursor: pointer;
+  letter-spacing: 0.015em;
+  transition: transform 0.12s, box-shadow 0.18s, background 0.18s;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.12),
+    inset 0 0 0 2px rgba(180,142,60,0.15);
+  position: relative;
+}
+button.btn::before, button.btn::after {
+  content: '';
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  width: 5px; height: 5px;
+  background: var(--gold);
+  border-radius: 50%;
+  opacity: 0.65;
+}
+button.btn::before { left: 8px; }
+button.btn::after { right: 8px; }
+button.btn:hover {
+  transform: translateY(-1px);
+  background: var(--manuscript-blue);
+  box-shadow:
+    0 4px 12px rgba(20,37,68,0.22),
+    inset 0 0 0 2px rgba(180,142,60,0.3);
+}
+button.btn:active { transform: translateY(0); }
+button.btn-ghost {
+  background: var(--paper-2);
+  color: var(--manuscript-blue-deep);
+  border: 1px solid var(--gold);
+  box-shadow: inset 0 0 0 2px rgba(180,142,60,0.1);
+}
+button.btn-ghost::before, button.btn-ghost::after { background: var(--manuscript-blue); opacity: 0.5; }
+button.btn-ghost:hover {
+  background: var(--paper);
+  border-color: var(--gold-deep);
+  color: var(--manuscript-blue-deep);
+}
+button.btn-add {
+  background: var(--paper-2);
+  color: var(--manuscript-blue);
+  border: 1.5px dashed var(--gold);
+  width: 100%;
+  padding: 14px;
+  font-family: var(--display);
+  font-size: 16.5px;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.18s;
+  position: relative;
+}
+button.btn-add:hover {
+  background: var(--paper);
+  border-color: var(--gold-deep);
+  border-style: solid;
+  color: var(--manuscript-blue-deep);
+  box-shadow: inset 0 0 0 1px rgba(180,142,60,0.25);
+}
+button.btn-add .plus {
+  font-style: normal;
+  font-size: 19px;
+  margin-right: 8px;
+  vertical-align: -1px;
+  color: var(--gold-deep);
+  font-weight: 700;
+}
+
+/* Block list (Today) */
+.day-start-row {
+  display: flex; align-items: baseline; gap: 10px;
+  font-family: var(--serif);
+  font-size: 15px;
+  color: var(--ink-mute);
+  margin-bottom: 14px;
+  padding: 6px 0;
+}
+.day-start-row input {
+  width: auto;
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom-style: dashed;
+  padding: 2px 4px;
+}
+.block-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.block-row {
+  display: grid;
+  grid-template-columns: 22px 64px 1fr auto auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--paper);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  transition: background 0.15s, opacity 0.15s, transform 0.15s;
+  position: relative;
+}
+.block-row:hover { background: var(--paper-2); }
+.block-row.done { opacity: 0.55; }
+.block-row.done .blk-subject { text-decoration: line-through; }
+
 .depth-pill {
   width: 14px; height: 14px; border-radius: 50%;
-  background: #d6d9e0; cursor: pointer; border: none; padding: 0;
-  display: block; margin: 0 auto;
+  background: #d6cdb6; cursor: pointer;
+  border: 1.5px solid rgba(0,0,0,0.05);
+  padding: 0;
   transition: transform 0.1s;
 }
-.depth-pill:hover { transform: scale(1.2); }
-.depth-pill.deep { background: #2d5a3d; }
-.depth-pill.shallow { background: #6080a0; }
-.block { grid-template-columns: 22px 80px 1fr 80px 28px !important; }
+.depth-pill:hover { transform: scale(1.18); }
+.depth-pill.deep { background: var(--green); }
+.depth-pill.shallow { background: var(--blue); }
 
-/* Calendar view */
-.cal-toolbar {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 10px; flex-wrap: wrap; gap: 8px;
+.blk-time {
+  font-family: var(--serif);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-mute);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
-.cal-stats { font-size: 12px; color: #5a6677; display: flex; gap: 14px; flex-wrap: wrap; }
-.cal-stats .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
-.cal-stats .dot.deep { background: #2d5a3d; }
-.cal-stats .dot.shallow { background: #6080a0; }
-.cal-stats .dot.untagged { background: #aab0b8; }
+.blk-subject {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  background: none;
+  border: none;
+  width: 100%;
+  outline: none;
+  padding: 2px 0;
+}
+.blk-subject:focus {
+  border-bottom: 1px dashed var(--line);
+}
+.blk-duration {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+  font-style: italic;
+}
+.blk-check {
+  width: 22px; height: 22px;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+.blk-delete {
+  background: none; border: none;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: 18px;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  transition: all 0.15s;
+  font-family: var(--serif);
+  line-height: 1;
+}
+.blk-delete:hover { background: rgba(159,63,47,0.1); color: var(--red); }
+
+/* Plan card with handwritten-feel */
+.plan-card {
+  padding: 18px 22px 22px;
+}
+.plan-line {
+  display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap;
+  font-family: var(--serif); font-size: 15.5px;
+  line-height: 1.9; color: var(--ink);
+}
+.plan-line .lbl {
+  color: var(--manuscript-blue-deep);
+  font-weight: 700;
+  font-style: italic;
+  font-family: var(--display);
+  font-size: 17px;
+  letter-spacing: 0.005em;
+  border-bottom: 1px dotted var(--gold);
+  padding-bottom: 1px;
+}
+.plan-line input[type="text"] {
+  flex: 1; min-width: 140px;
+  font-family: var(--serif);
+  font-size: 15.5px;
+  color: var(--ink);
+  font-style: italic;
+}
+.plan-line input::placeholder { color: var(--ink-faint); font-style: italic; }
+
+/* Footnote / annotation */
+.research-quote {
+  background: var(--paper-2);
+  border-left: 3px solid var(--gold);
+  padding: 14px 18px 14px 22px;
+  margin-bottom: 22px;
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--ink-mute);
+  font-family: var(--serif);
+  line-height: 1.6;
+  border-radius: 0 6px 6px 0;
+  position: relative;
+  box-shadow: var(--shadow-paper);
+}
+.research-quote::before {
+  content: '\201C';
+  position: absolute;
+  left: 8px; top: 4px;
+  font-family: var(--display);
+  font-size: 30px;
+  color: var(--gold);
+  font-style: normal;
+  line-height: 1;
+}
+.research-quote b { color: var(--manuscript-blue-deep); font-style: normal; font-weight: 600; }
+
+/* Forgive note */
+.forgive {
+  display: none;
+  background: rgba(225, 200, 130, 0.18);
+  border: 1px solid rgba(225, 200, 130, 0.6);
+  padding: 14px 18px;
+  border-radius: 8px;
+  margin-top: 14px;
+  font-size: 13.5px;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-style: italic;
+}
+.forgive.show { display: block; }
+.forgive b { color: var(--red); font-style: normal; }
+
+/* ─── Calendar ─── */
+.cal-toolbar {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 18px;
+  flex-wrap: wrap; gap: 12px;
+}
+.cal-date {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--manuscript-blue-deep);
+}
+.cal-date .day-name {
+  display: block; font-size: 14px; color: var(--gold-deep); font-weight: 500;
+  font-style: italic; margin-bottom: 2px; letter-spacing: 0.05em;
+  font-family: var(--display);
+}
+.cal-stats {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  font-size: 12.5px; color: var(--ink-mute);
+}
+.cal-stats .stat {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--serif);
+}
+.cal-stats .dot {
+  display: inline-block; width: 9px; height: 9px;
+  border-radius: 50%; background: var(--ink-faint);
+}
+.cal-stats .dot.deep { background: var(--green); }
+.cal-stats .dot.shallow { background: var(--blue); }
+
 .cal-grid {
   position: relative;
-  border: 1px solid #e6e8ee;
-  border-radius: 8px;
-  background: white;
+  background: var(--paper);
+  border-radius: 6px;
+  border: 1.5px solid var(--gold);
   overflow: hidden;
+  box-shadow:
+    var(--shadow-paper),
+    inset 0 0 0 1px rgba(180,142,60,0.18);
 }
-.cal-hours { position: relative; }
 .cal-hour {
   display: flex;
-  height: 50px;
-  border-bottom: 1px solid #f3f4f7;
+  height: 56px;
+  border-bottom: 1px solid var(--line-soft);
+  position: relative;
 }
 .cal-hour:last-child { border-bottom: none; }
 .cal-hour-label {
-  width: 56px; flex-shrink: 0;
-  padding: 4px 8px;
-  font-size: 11px; color: #8a92a0;
-  border-right: 1px solid #eef0f3;
-  background: #fafbfc;
+  width: 64px; flex-shrink: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: var(--display);
+  font-style: italic;
+  color: var(--manuscript-blue);
   text-align: right;
+  border-right: 1.5px solid var(--gold);
+  background: var(--paper-2);
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 .cal-hour-slot { flex: 1; position: relative; }
 .cal-block {
   position: absolute;
-  left: 60px; right: 8px;
-  background: #ebf3ee;
-  border-left: 3px solid #2d5a3d;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 12px; line-height: 1.3;
-  overflow: hidden;
-  cursor: pointer;
+  left: 70px; right: 14px;
+  background: rgba(74,107,62,0.10);
+  border-left: 3px solid var(--green);
+  border-radius: 5px;
+  padding: 6px 12px;
+  font-family: var(--serif);
   z-index: 2;
-  transition: filter 0.1s;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.18s;
 }
-.cal-block:hover { filter: brightness(0.97); }
-.cal-block.shallow { background: #eef2f7; border-left-color: #6080a0; }
-.cal-block.untagged { background: #f3f4f7; border-left-color: #aab0b8; }
-.cal-block.done { opacity: 0.5; text-decoration: line-through; }
-.cal-block .cal-block-time { color: #6b7585; font-size: 10px; margin-bottom: 2px; }
+.cal-block:hover { transform: translateX(-1px); box-shadow: 0 2px 8px rgba(70,55,30,0.10); }
+.cal-block.shallow {
+  background: rgba(74,100,125,0.10);
+  border-left-color: var(--blue);
+}
+.cal-block.untagged {
+  background: rgba(138,130,118,0.10);
+  border-left-color: var(--pencil);
+}
+.cal-block.done {
+  opacity: 0.45;
+}
+.cal-block.done .cal-block-subject {
+  text-decoration: line-through;
+}
+.cal-block-time {
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin-bottom: 1px;
+}
+.cal-block-subject {
+  font-size: 14.5px;
+  font-weight: 600;
+  font-style: italic;
+  font-family: var(--display);
+  color: var(--manuscript-blue-deep);
+  line-height: 1.25;
+  letter-spacing: 0.005em;
+}
 .cal-now {
-  position: absolute; left: 56px; right: 0;
-  height: 2px; background: #c33;
+  position: absolute; left: 64px; right: 0;
+  height: 1.5px; background: var(--red);
   z-index: 5; pointer-events: none;
 }
 .cal-now::before {
   content: ''; position: absolute;
   left: 0; top: -4px;
-  width: 10px; height: 10px;
-  background: #c33; border-radius: 50%;
+  width: 9px; height: 9px;
+  background: var(--red);
+  border-radius: 50%;
 }
 .cal-empty {
-  text-align: center; padding: 30px;
-  color: #8a92a0; font-size: 13px;
+  text-align: center; padding: 50px 20px;
+  color: var(--ink-faint);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14px;
 }
 
-/* Shutdown ritual */
-.ritual-step {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 0; border-bottom: 1px solid #f3f4f7;
+/* ─── Modal (Add Block) ─── */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(40,30,20,0.35);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -42%) scale(0.94) rotate(-1deg);
+  width: min(440px, 92vw);
+  background: var(--paper);
+  border-radius: 6px;
+  padding: 32px 30px 26px;
+  box-shadow: var(--shadow-lift);
+  z-index: 101;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.32s cubic-bezier(0.34, 1.4, 0.64, 1);
+  border: 1px solid var(--gold);
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 27px,
+      rgba(80,100,140,0.04) 28px
+    );
+}
+.modal::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(180,142,60,0.35);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.modal::before {
+  content: '';
+  position: absolute;
+  top: -8px; left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 70px; height: 16px;
+  background: rgba(225, 200, 130, 0.55);
+  border-radius: 1px;
+  box-shadow: 0 1px 3px rgba(70,55,30,0.08);
+}
+.modal.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1) rotate(0);
+  pointer-events: auto;
+}
+.modal h3 {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--manuscript-blue-deep);
+  margin-bottom: 4px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.modal h3::first-letter {
+  color: var(--gold-deep);
+  font-weight: 700;
+  font-size: 1.1em;
+}
+.modal p.modal-sub {
+  font-family: var(--serif);
+  font-style: italic;
   font-size: 13px;
+  color: var(--ink-mute);
+  margin-bottom: 20px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.modal p.modal-sub::before {
+  content: '❦ ';
+  color: var(--gold);
+  font-style: normal;
+}
+.modal label { margin-top: 14px; }
+.modal label:first-of-type { margin-top: 6px; }
+.duration-presets {
+  display: flex; gap: 6px; margin-top: 6px;
+  flex-wrap: wrap;
+}
+.duration-preset {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-mute);
+  padding: 6px 10px;
+  font-family: var(--serif);
+  font-size: 13px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.duration-preset:hover { border-color: var(--accent); color: var(--accent); }
+.duration-preset.selected {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.depth-choice {
+  display: flex; gap: 8px; margin-top: 6px;
+}
+.depth-option {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 13.5px;
+  color: var(--ink-mute);
+  background: transparent;
+  transition: all 0.15s;
+}
+.depth-option:hover { border-color: var(--accent-soft); }
+.depth-option.selected.deep {
+  border-color: var(--green); background: rgba(74,107,62,0.08);
+  color: var(--green); font-weight: 600;
+}
+.depth-option.selected.shallow {
+  border-color: var(--blue); background: rgba(74,100,125,0.08);
+  color: var(--blue); font-weight: 600;
+}
+.depth-option.selected.none {
+  border-color: var(--ink-faint); background: rgba(138,130,118,0.08);
+  color: var(--ink); font-weight: 600;
+}
+.modal-actions {
+  display: flex; justify-content: flex-end; gap: 8px;
+  margin-top: 24px;
+}
+
+/* ─── Shutdown ritual ─── */
+.ritual-step {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--serif);
 }
 .ritual-step:last-child { border-bottom: none; }
-.ritual-step input[type="checkbox"] {
-  width: 18px; height: 18px; accent-color: #2d5a3d;
-  cursor: pointer; flex-shrink: 0;
+.ritual-check {
+  width: 20px; height: 20px;
+  margin-top: 2px;
+  accent-color: var(--green);
+  cursor: pointer;
+  flex-shrink: 0;
 }
-.ritual-step.done label { color: #8a92a0; text-decoration: line-through; }
+.ritual-text {
+  flex: 1;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+.ritual-text .step-num {
+  color: var(--accent);
+  font-weight: 700;
+  margin-right: 6px;
+}
+.ritual-step.done .ritual-text { color: var(--ink-faint); text-decoration: line-through; }
 .shutdown-complete {
-  margin-top: 12px; padding: 14px; border-radius: 8px;
-  background: #2d5a3d; color: white; text-align: center;
-  font-weight: 600; cursor: pointer; border: none; width: 100%;
-  font-family: inherit; font-size: 14px;
-  opacity: 0.4; transition: opacity 0.2s;
+  margin-top: 16px;
+  padding: 14px;
+  width: 100%;
+  background: var(--green);
+  color: var(--paper);
+  border: none;
+  border-radius: 8px;
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.35;
+  transition: opacity 0.25s, transform 0.15s;
 }
-.shutdown-complete.ready { opacity: 1; cursor: pointer; }
-.shutdown-complete.fired { background: #1a2030; }
+.shutdown-complete.ready { opacity: 1; }
+.shutdown-complete.fired {
+  background: var(--ink);
+  font-style: italic;
+}
+.shutdown-complete:hover.ready { transform: translateY(-1px); }
 
-/* Scoreboard */
+/* ─── Stats ─── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.stat-card {
+  background: var(--paper);
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  padding: 18px 14px 16px;
+  text-align: center;
+  box-shadow: var(--shadow-paper);
+  position: relative;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(180,142,60,0.3);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.stat-num {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 38px;
+  font-weight: 600;
+  color: var(--manuscript-blue-deep);
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(180,142,60,0.18);
+}
+.stat-lbl {
+  font-size: 11.5px;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
 .score-row {
-  display: flex; gap: 6px; margin-top: 10px;
+  display: flex; gap: 5px;
   align-items: flex-end;
+  height: 110px;
+  margin-top: 10px;
+  position: relative;
+  padding: 0 4px;
 }
 .score-bar {
-  flex: 1; min-width: 18px;
-  background: #eef0f3; border-radius: 3px 3px 0 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   position: relative;
-  display: flex; flex-direction: column; justify-content: flex-end;
 }
-.score-bar .deep-fill { background: #2d5a3d; border-radius: 3px 3px 0 0; }
-.score-bar .shallow-fill { background: #6080a0; }
-.score-bar-label { font-size: 10px; color: #8a92a0; text-align: center; padding-top: 2px; }
+.score-bar-fill {
+  background: var(--green);
+  border-radius: 4px 4px 0 0;
+  min-height: 1px;
+  transition: height 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+.score-bar-fill.shallow { background: var(--blue); margin-top: 1px; border-radius: 0; }
+.score-bar-label {
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  text-align: center;
+  margin-top: 6px;
+  font-family: var(--serif);
+}
 .score-target {
-  position: absolute; left: 0; right: 0;
-  border-top: 1px dashed #c33;
+  position: absolute;
+  left: 0; right: 0;
+  border-top: 1px dashed var(--red);
   pointer-events: none;
+  font-size: 9px;
+  color: var(--red);
+  font-style: italic;
+}
+.score-target span {
+  background: var(--paper);
+  padding: 0 4px;
+  position: absolute;
+  right: 0; top: -8px;
+}
+
+.day-row {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 13.5px;
+  font-family: var(--serif);
+}
+.day-row:last-child { border-bottom: none; }
+.day-row-top {
+  display: flex; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.day-row .day-name { font-weight: 600; color: var(--ink); }
+.day-row .day-pct { color: var(--ink-mute); font-size: 12.5px; }
+.day-bar-wrap {
+  background: var(--line-soft);
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.day-bar { height: 100%; background: var(--accent); border-radius: 2px; }
+.day-fix {
+  font-size: 12.5px;
+  color: var(--accent);
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* ─── Why content ─── */
+.why-content p {
+  margin-bottom: 14px;
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+.why-content p b { color: var(--accent); }
+.why-content .sources {
+  font-size: 12.5px;
+  color: var(--ink-mute);
+  font-style: italic;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 14px;
+  margin-top: 18px;
+}
+
+/* ─── Export buttons ─── */
+.export-row {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 14px;
+}
+.gcal-links {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 10px;
+}
+.gcal-link {
+  display: inline-block;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  font-size: 12px;
+  font-family: var(--serif);
+  color: var(--accent);
+  background: var(--paper-2);
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.gcal-link:hover {
+  background: var(--paper);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 11px 20px;
+  border-radius: 8px;
+  font-family: var(--serif);
+  font-size: 13.5px;
+  font-style: italic;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 200;
+  transition: opacity 0.25s, transform 0.25s;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Save button bar */
+.action-row {
+  display: flex; gap: 10px; align-items: center;
+  margin-top: 8px;
+}
+
+/* Smaller stat row */
+.stats-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .wrap { padding: 24px 14px 80px; }
+  h1 { font-size: 26px; }
+  .sheet { padding: 18px 18px; }
+  .tabs { gap: 0; overflow-x: auto; flex-wrap: nowrap; }
+  .tab { padding: 10px 10px 9px; font-size: 13.5px; flex-shrink: 0; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .stats-grid .stat-card:nth-child(3) { grid-column: span 2; }
+  .block-row { grid-template-columns: 18px 56px 1fr auto auto; gap: 8px; padding: 9px 10px; }
+  .blk-delete { display: none; }
+  .cal-block { left: 60px; right: 8px; }
+  .cal-hour-label { width: 54px; padding: 4px 6px; font-size: 10.5px; }
+  .cal-now { left: 54px; }
 }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Study Plan Bridge</h1>
-    <div class="sub">A planner built on intention-behavior research. Your data stays in this browser.</div>
+    <div class="title-row">
+      <svg class="title-orn" viewBox="0 0 70 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g fill="none" stroke="#b48e3c" stroke-width="1.2" stroke-linecap="round">
+          <path d="M2 18 Q 18 18 22 12 Q 26 6 34 12 Q 42 18 50 12 Q 58 6 66 18"/>
+          <path d="M2 18 Q 18 18 22 24 Q 26 30 34 24 Q 42 18 50 24 Q 58 30 66 18"/>
+          <circle cx="22" cy="12" r="1.5" fill="#b48e3c"/>
+          <circle cx="50" cy="12" r="1.5" fill="#b48e3c"/>
+          <circle cx="22" cy="24" r="1.5" fill="#b48e3c"/>
+          <circle cx="50" cy="24" r="1.5" fill="#b48e3c"/>
+          <circle cx="34" cy="18" r="2.2" fill="#1f3a5f"/>
+        </g>
+        <path d="M66 18 L 68 16 L 70 18 L 68 20 Z" fill="#b48e3c"/>
+        <path d="M2 18 L 0 16 L -2 18 L 0 20 Z" fill="#b48e3c"/>
+      </svg>
+      <h1>Study Plan <span class="amp">&amp;</span> Bridge</h1>
+      <svg class="title-orn flip" viewBox="0 0 70 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g fill="none" stroke="#b48e3c" stroke-width="1.2" stroke-linecap="round">
+          <path d="M2 18 Q 18 18 22 12 Q 26 6 34 12 Q 42 18 50 12 Q 58 6 66 18"/>
+          <path d="M2 18 Q 18 18 22 24 Q 26 30 34 24 Q 42 18 50 24 Q 58 30 66 18"/>
+          <circle cx="22" cy="12" r="1.5" fill="#b48e3c"/>
+          <circle cx="50" cy="12" r="1.5" fill="#b48e3c"/>
+          <circle cx="22" cy="24" r="1.5" fill="#b48e3c"/>
+          <circle cx="50" cy="24" r="1.5" fill="#b48e3c"/>
+          <circle cx="34" cy="18" r="2.2" fill="#1f3a5f"/>
+        </g>
+      </svg>
+    </div>
+    <div class="sub">A daily planner built on intention-behavior research &amp; Cal Newport's Deep Work.</div>
+    <svg class="rule" viewBox="0 0 220 14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <line x1="2" y1="7" x2="92" y2="7" stroke="#b48e3c" stroke-width="0.8"/>
+      <line x1="128" y1="7" x2="218" y2="7" stroke="#b48e3c" stroke-width="0.8"/>
+      <g transform="translate(110 7)">
+        <path d="M -10 0 Q -6 -3 -2 0 Q -6 3 -10 0" fill="none" stroke="#b48e3c" stroke-width="0.8"/>
+        <path d="M 10 0 Q 6 -3 2 0 Q 6 3 10 0" fill="none" stroke="#b48e3c" stroke-width="0.8"/>
+        <path d="M 0 -4 L 3 0 L 0 4 L -3 0 Z" fill="#1f3a5f"/>
+        <circle cx="0" cy="0" r="1.2" fill="#b48e3c"/>
+      </g>
+    </svg>
   </header>
 
-  <div class="tabs">
+  <nav class="tabs">
     <button class="tab active" data-tab="today">Today</button>
     <button class="tab" data-tab="calendar">Calendar</button>
     <button class="tab" data-tab="plans">If-Then Plans</button>
     <button class="tab" data-tab="review">Shutdown</button>
     <button class="tab" data-tab="history">History</button>
     <button class="tab" data-tab="why">Why this works</button>
-  </div>
+  </nav>
 
-  <div class="panel active" id="panel-today">
-    <div class="research-note">
-      Research finding: forming a specific <b>if-then plan</b> produces a medium-to-large boost in goal attainment compared with just intending to study (<b>d = 0.65</b>, Gollwitzer &amp; Sheeran 2006, in Sheeran &amp; Webb 2016).
-    </div>
-
-    <div class="card">
-      <h2>1. Today's goal</h2>
-      <div class="why">Make it a real outcome, not "study more." <b>Vague then-parts fail</b> (Sheeran 2002).</div>
-      <input type="text" id="goal" placeholder="e.g. Finish chapter 5 problems and review lecture notes from Mon">
-    </div>
-
-    <div class="card">
-      <h2>2. Time blocks for today</h2>
-      <div class="why">Plan in 25-50 min chunks with breaks. The <b>planning fallacy</b> (Sheeran &amp; Webb) means you'll underestimate how long things take, so schedule fewer, longer-than-you-think slots.</div>
-      <div id="blocks"></div>
-      <button class="add-block-btn" id="addBlock">+ Add a block</button>
-    </div>
-
-    <div class="card">
-      <h2>3. Your starter if-then plan for today</h2>
-      <div class="why">Implementation intention template from Gollwitzer &amp; Sheeran (2006): <b>"If situation Y occurs, then I will initiate response Z!"</b></div>
-      <div class="plan-line">
-        <span class="lbl">If</span> it is
-        <input type="text" id="startTime" placeholder="9:00 AM" style="max-width:120px">
-        at
-        <input type="text" id="startPlace" placeholder="my desk" style="max-width:160px">,
+  <div class="pages">
+    <!-- TODAY -->
+    <section class="page active" id="panel-today">
+      <div class="sheet clipped">
+        <h2>Today's goal</h2>
+        <div class="sub-note">Make it a real outcome, not "study more." <b>Vague then-parts fail</b> (Sheeran 2002).</div>
+        <input type="text" id="goal" placeholder="e.g. Finish chapter 5 problems and review Monday's lecture notes">
+        <span class="marginalia right"><span class="arrow">&#8592;</span> name the win</span>
       </div>
-      <div class="plan-line" style="margin-top:8px">
-        <span class="lbl">then I will</span>
-        <input type="text" id="startAction" placeholder="open chapter 5 and start problem 1">
-      </div>
-    </div>
 
-    <div style="display:flex; gap:8px; align-items:center;">
-      <button class="primary" id="saveToday">Save today's plan</button>
-      <button class="ghost" id="clearToday">Reset</button>
-    </div>
-
-    <div class="card" style="margin-top:14px">
-      <h2>4. Send blocks to your calendar</h2>
-      <div class="why">One-way export. Pick whichever fits the device you're on. The .ics file works in Google Calendar, Apple Calendar (Mac/iPhone), Outlook, and Apple Reminders.</div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-        <button class="primary" id="downloadIcs">Download .ics for today</button>
-        <button class="ghost" id="downloadIcsTodo">Download as Reminders (.ics todos)</button>
-      </div>
-      <div style="font-size:12px; color:#6b7585; margin-bottom:6px;">Or add each block straight to Google Calendar:</div>
-      <div id="gcalLinks"><span style="color:#8a92a0; font-size:12px;">Fill in block times + tasks above to see one-click Google links.</span></div>
-      <div class="why" style="margin-top:10px">
-        <b>Apple Calendar / Reminders:</b> double-click the downloaded .ics on Mac, or tap-and-hold on iPhone &rarr; "Open in Calendar" / "Open in Reminders".<br>
-        <b>Google Calendar (web):</b> Settings &rarr; Import &amp; export &rarr; Import the .ics. Or just use the one-click links above.
-      </div>
-    </div>
-
-    <div class="forgive" id="forgive">
-      <b>It's okay.</b> Sirois &amp; Pychyl (2013) found that self-forgiveness for past procrastination <i>reduces</i> future procrastination, beating yourself up makes it worse. Pick the next block and start there.
-    </div>
-  </div>
-
-  <div class="panel" id="panel-calendar">
-    <div class="research-note">
-      Newport's <b>"schedule every minute"</b> rule (Deep Work, Rule #4): <i>"Your goal is not to stick to a given schedule at all costs; it's instead to maintain, at all times, a thoughtful say in what you're doing with your time going forward, even if these decisions are reworked again and again as the day unfolds."</i>
-    </div>
-
-    <div class="card">
-      <div class="cal-toolbar">
-        <div>
-          <h2 id="cal-date" style="margin:0">Today</h2>
-          <div class="cal-stats" id="cal-stats" style="margin-top:4px"></div>
+      <div class="sheet taped taped-blue">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h2>Time blocks</h2>
+            <div class="sub-note">Newport's <b>"schedule every minute"</b> rule. Plan in 25–90 min chunks; cap deep work at 1 hr/day to start.</div>
+          </div>
         </div>
-        <div style="display:flex; gap:6px;">
-          <button class="ghost" id="cal-replan" title="Cross out remaining blocks and re-time them from now">Replan from now</button>
+        <div class="day-start-row">
+          <span>I'll start at</span>
+          <input type="time" id="dayStart" value="09:00">
+        </div>
+        <div class="block-list" id="blockList"></div>
+        <button class="btn-add" id="openAddBlock"><span class="plus">+</span>Add a block</button>
+      </div>
+
+      <div class="sheet plan-card taped taped-kraft taped-right">
+        <h2>Starter if-then plan for today</h2>
+        <div class="sub-note">Implementation intention template (Gollwitzer &amp; Sheeran 2006): <b>If situation Y occurs, then I will initiate response Z.</b></div>
+        <div class="plan-line">
+          <span class="lbl">If</span> it is
+          <input type="text" id="startTime" placeholder="9:00 AM" style="max-width:120px">
+          at
+          <input type="text" id="startPlace" placeholder="my desk" style="max-width:160px">,
+        </div>
+        <div class="plan-line" style="margin-top:6px">
+          <span class="lbl">then I will</span>
+          <input type="text" id="startAction" placeholder="open chapter 5 and start problem 1">
         </div>
       </div>
-      <div class="cal-grid" id="cal-grid"></div>
-      <div class="why" style="margin-top:10px">
-        <b>Tag each block</b> on the Today tab with the colored dot: green = deep work (cognitively demanding, pushes your limits), blue = shallow (logistical, easy to replicate). Newport recommends novices target <b>~1 hr/day deep work</b>, working up to <b>~4 hrs/day max</b>.
+
+      <div class="action-row">
+        <button class="btn" id="saveToday">Save today's plan</button>
+        <button class="btn btn-ghost" id="clearToday">Reset</button>
       </div>
-    </div>
+
+      <div class="forgive" id="forgive">
+        <b>It's okay.</b> Sirois &amp; Pychyl (2013) found that self-forgiveness for past procrastination <i>reduces</i> future procrastination. Pick the next block and start there.
+      </div>
+    </section>
+
+    <!-- CALENDAR -->
+    <section class="page" id="panel-calendar">
+      <div class="research-quote">
+        <b>Newport's "schedule every minute" rule</b> (Deep Work, Rule #4): "Your goal is not to stick to a given schedule at all costs; it's instead to maintain, at all times, a thoughtful say in what you're doing with your time going forward — even if these decisions are reworked again and again as the day unfolds."
+      </div>
+
+      <div class="sheet taped taped-blue taped-left">
+        <div class="cal-toolbar">
+          <div class="cal-date">
+            <span class="day-name" id="cal-dayname">—</span>
+            <span id="cal-datestring">—</span>
+          </div>
+          <div class="cal-stats" id="cal-stats"></div>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+
+      <div class="sheet clipped">
+        <h2>Send to your calendar</h2>
+        <div class="sub-note">One-way export. Works in Google Calendar, Apple Calendar, Outlook, and Apple Reminders.</div>
+        <div class="export-row">
+          <button class="btn" id="downloadIcs">Download .ics for today</button>
+          <button class="btn btn-ghost" id="downloadIcsTodo">Download as Reminders</button>
+        </div>
+        <div style="font-size:12.5px; color: var(--ink-mute); margin-top: 12px; font-family: var(--serif); font-style: italic;">Or add each block straight to Google Calendar:</div>
+        <div class="gcal-links" id="gcalLinks"></div>
+      </div>
+    </section>
+
+    <!-- IF-THEN PLANS -->
+    <section class="page" id="panel-plans">
+      <div class="research-quote">
+        Drawn from <b>Gollwitzer &amp; Sheeran (2006), Table 1</b>. One plan per failure mode. Both the cue (<b>If</b>) and the response (<b>then I will</b>) must be specific. Vague plans don't work.
+      </div>
+
+      <div class="sheet plan-card taped">
+        <h2>For not starting on time</h2>
+        <div class="sub-note">Use a <b>time + place</b> cue. Paper example: "If it is 5pm on Monday, then I will jog home from work."</div>
+        <span class="marginalia right">the cue does the work</span>
+        <div class="plan-line">
+          <span class="lbl">If</span> it is
+          <input type="text" data-plan="startWhen" placeholder="2:00 PM Sunday">
+          and I'm
+          <input type="text" data-plan="startWhere" placeholder="at my desk with my laptop on">
+        </div>
+        <div class="plan-line" style="margin-top:6px">
+          <span class="lbl">then I will</span>
+          <input type="text" data-plan="startThen" placeholder="immediately open my notes and read for 5 min, even if I don't feel ready">
+        </div>
+      </div>
+
+      <div class="sheet plan-card taped taped-kraft taped-left">
+        <h2>For phone & social media distraction</h2>
+        <div class="sub-note">Use an <b>internal cue + replacement</b>. Paper example: "If I start to think about my favorite snack, then I immediately ignore that thought."</div>
+        <div class="plan-line">
+          <span class="lbl">If</span> I
+          <input type="text" data-plan="distractIf" placeholder="feel the urge to pick up my phone">
+        </div>
+        <div class="plan-line" style="margin-top:6px">
+          <span class="lbl">then I will</span>
+          <input type="text" data-plan="distractThen" placeholder="put it face-down in the drawer and read one more paragraph">
+        </div>
+      </div>
+
+      <div class="sheet plan-card clipped">
+        <h2>For when something else comes up</h2>
+        <div class="sub-note">Anticipate the obstacle. Pre-planned shielding responses produce <b>d = 0.77</b> against derailment.</div>
+        <div class="plan-line">
+          <span class="lbl">If</span>
+          <input type="text" data-plan="interruptIf" placeholder="someone messages me / a non-urgent task pops up">
+        </div>
+        <div class="plan-line" style="margin-top:6px">
+          <span class="lbl">then I will</span>
+          <input type="text" data-plan="interruptThen" placeholder="reply 'I'll get back to you at 4 PM' and finish my block">
+        </div>
+      </div>
+
+      <div class="sheet plan-card taped taped-blue taped-right">
+        <h2>For unrealistic plans / running out of steam</h2>
+        <div class="sub-note">Self-talk plan against ego depletion. Cap your daily plan at <b>2/3 of what feels possible</b>.</div>
+        <div class="plan-line">
+          <span class="lbl">If</span> I
+          <input type="text" data-plan="quitIf" placeholder="feel like quitting before the timer ends">
+        </div>
+        <div class="plan-line" style="margin-top:6px">
+          <span class="lbl">then I will</span>
+          <input type="text" data-plan="quitThen" placeholder="say to myself 'just 5 more minutes' and keep my hand on the page">
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn" id="savePlans">Save plans</button>
+      </div>
+    </section>
+
+    <!-- SHUTDOWN -->
+    <section class="page" id="panel-review">
+      <div class="research-quote">
+        <b>Newport's shutdown ritual</b> (Deep Work, Rule #1) defeats the Zeigarnik effect — unfinished tasks dominating attention. 10–15 min, becomes habit in 1–2 weeks. Each step is intentional. End with the literal phrase.
+      </div>
+
+      <div class="sheet taped taped-kraft">
+        <h2>End-of-day shutdown</h2>
+        <div class="sub-note">Walk through each step. The ritual only fully fires when all five are checked.</div>
+        <div id="ritual-list"></div>
+        <button class="shutdown-complete" id="shutdownBtn">Shutdown complete.</button>
+        <span class="marginalia bottom-left">say it out loud &#8594;</span>
+      </div>
+
+      <div class="sheet clipped">
+        <h2>How did today actually go?</h2>
+        <div class="sub-note">Progress monitoring is the second-strongest research-backed lever (Harkin et al. 2016). Don't skip on bad days — that's the "ostrich problem."</div>
+        <label>One thing that worked</label>
+        <input type="text" id="rev-worked" placeholder="The 9 AM start cue actually got me started today">
+        <label style="margin-top:14px">One thing that derailed me</label>
+        <input type="text" id="rev-derailed" placeholder="Got pulled into a group chat at 11">
+        <label style="margin-top:14px">What if-then plan should I add or change tomorrow?</label>
+        <textarea id="rev-fix" placeholder="If a notification pops up before noon, then I will swipe it away without reading."></textarea>
+        <div class="action-row" style="margin-top: 16px">
+          <button class="btn" id="saveReview">Log today's review</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="page" id="panel-history">
+      <div class="research-quote">
+        4DX scoreboard (Deep Work, Rule #1, "Execute Like a Business"). The <b>lead measure</b> is hours spent in deep work — track behavior you can change today, not the lag outcome (your grade) months later.
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num" id="stat-streak">0</div><div class="stat-lbl">day streak</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-deep">0</div><div class="stat-lbl">deep hrs / 7d</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-rate">—</div><div class="stat-lbl">avg completion</div></div>
+      </div>
+
+      <div class="sheet taped taped-blue taped-left">
+        <h2>Deep work scoreboard, last 7 days</h2>
+        <div class="sub-note">Dashed red line: Newport's ~1 hr/day novice target. Push toward 2–4 hrs/day as a ceiling.</div>
+        <div class="score-row" id="score-row"></div>
+      </div>
+
+      <div class="sheet clipped">
+        <h2>Last 14 days</h2>
+        <div id="history-list" style="margin-top:8px">
+          <div class="cal-empty">No history yet. Save a plan on the Today tab to start tracking.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHY -->
+    <section class="page" id="panel-why">
+      <div class="sheet why-content taped taped-kraft">
+        <h2>What the research says</h2>
+        <span class="marginalia right">d = 0.65 &#8594;</span>
+        <p>Five sources converge on the same finding: people don't fail to study because they lack motivation, they fail because <b>good intentions don't automatically translate into action</b>. Sheeran's 2002 meta-analysis showed that intentions explain only about a third of variance in actual behavior. The rest is the gap.</p>
+        <p>The most reliable fix is the <b>implementation intention</b> (Gollwitzer): a literal "if X, then I will Y" sentence that mentally pre-commits a specific response to a specific cue. Across 94 studies the effect was <b>d = 0.65</b>, bigger than most psychological interventions ever produce.</p>
+        <p>Three things make if-then plans work: (1) <b>specificity</b> — "study more" doesn't, "open chapter 5 at 9 AM at my desk" does; (2) <b>real cues</b> — a time, place, or specific feeling; (3) <b>strong underlying goal</b> — if you don't actually want to pass the exam, no formula helps.</p>
+        <p>Sirois &amp; Pychyl (2013) add the kindness piece: procrastination is short-term mood repair, not laziness. Self-forgiveness for past missed sessions <i>reduces</i> future procrastination. So when a plan flops, log it, adjust the if-then, and move on.</p>
+        <p><b>Cal Newport's Deep Work</b> stacks neatly on top. Where the if-then plans answer "how do I follow through?", Deep Work answers "what should the blocks contain?" Three ideas from the book are baked into this app:</p>
+        <p><b>1. Schedule every minute.</b> The empty hour is where intentions die. Newport gives every minute of the workday a job, in 30-min minimum blocks. The Calendar tab is the digital version. When a block breaks, you don't abandon the plan — you redraw it from now.</p>
+        <p><b>2. Deep vs shallow.</b> Deep work pushes your limits and is hard to replace. Shallow work is logistical and easy. Newport's heuristic: ask how many months it would take to train a smart college grad to do the task. Many = deep, a week = shallow. Aim for 50–70% deep; novices cap at ~1 hr/day, experts ~4 hrs.</p>
+        <p><b>3. Shutdown ritual.</b> Unfinished tasks dominate attention until they're written down with a plan (the Zeigarnik effect, Baumeister &amp; Masicampo). Newport's fix: a 5-step end-of-day routine ending in the literal phrase "Shutdown complete." Habit forms in 1–2 weeks.</p>
+        <p>Bonus: Newport's 4DX scoreboard idea — track <b>lead measures</b> (deep work hours this week) instead of <b>lag measures</b> (final grade). The History tab is your scoreboard.</p>
+        <div class="sources">
+          Sources: Sheeran &amp; Webb (2016) <i>The Intention-Behavior Gap</i>; Sheeran (2002) <i>Intention-Behaviour Relations</i>; Gollwitzer &amp; Sheeran (2006) <i>Implementation Intentions and Goal Attainment</i>; Sirois &amp; Pychyl (2013) <i>Procrastination and Short-Term Mood Regulation</i>; Newport (2016) <i>Deep Work</i>.
+        </div>
+      </div>
+    </section>
   </div>
 
-  <div class="panel" id="panel-plans">
-    <div class="research-note">
-      You told me your study days fall apart for four reasons. Below is one if-then plan per failure mode, drawn from the templates in <b>Gollwitzer &amp; Sheeran (2006), Table 1</b>. Edit each one to fit you. The cue (<b>If</b>) and the response (<b>then I will</b>) both have to be specific.
-    </div>
+  <svg class="divider" viewBox="0 0 240 22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="margin-top: 36px;">
+    <line x1="20" y1="11" x2="100" y2="11" stroke="#b48e3c" stroke-width="0.8"/>
+    <line x1="140" y1="11" x2="220" y2="11" stroke="#b48e3c" stroke-width="0.8"/>
+    <g transform="translate(120 11)">
+      <path d="M -16 0 Q -10 -5 -4 0 Q -10 5 -16 0" fill="none" stroke="#b48e3c" stroke-width="0.8"/>
+      <path d="M 16 0 Q 10 -5 4 0 Q 10 5 16 0" fill="none" stroke="#b48e3c" stroke-width="0.8"/>
+      <path d="M 0 -6 L 4 0 L 0 6 L -4 0 Z" fill="#1f3a5f"/>
+      <circle cx="0" cy="0" r="1.6" fill="#b48e3c"/>
+    </g>
+  </svg>
+  <div style="text-align: center; font-family: var(--hand); color: var(--ink-faint); font-size: 18px; opacity: 0.85; margin-top: -4px;">&mdash; finis &mdash;</div>
+</div>
 
-    <div class="card">
-      <h2>A. For not starting on time</h2>
-      <div class="why">Use a <b>time + place</b> cue. Paper example: "If it is 5pm on Monday, then I will jog home from work."</div>
-      <div class="plan-line">
-        <span class="lbl">If</span> it is
-        <input type="text" data-plan="startWhen" placeholder="2:00 PM Sunday">
-        and I'm
-        <input type="text" data-plan="startWhere" placeholder="at my desk with my laptop on">
-      </div>
-      <div class="plan-line" style="margin-top:8px">
-        <span class="lbl">then I will</span>
-        <input type="text" data-plan="startThen" placeholder="immediately open my notes and read for 5 min, even if I don't feel ready">
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>B. For phone &amp; social media distraction</h2>
-      <div class="why">Use an <b>internal-cue + replacement</b> response. Paper example: "If I start to think about my favorite snack, then I immediately ignore that thought!"</div>
-      <div class="plan-line">
-        <span class="lbl">If</span> I
-        <input type="text" data-plan="distractIf" placeholder="feel the urge to pick up my phone">
-      </div>
-      <div class="plan-line" style="margin-top:8px">
-        <span class="lbl">then I will</span>
-        <input type="text" data-plan="distractThen" placeholder="put it face-down in the drawer and read one more paragraph">
-      </div>
-      <div class="why" style="margin-top:8px">Tip: also pre-place the obstacle. Phone in another room beats willpower every time.</div>
-    </div>
-
-    <div class="card">
-      <h2>C. For when something else comes up</h2>
-      <div class="why">Anticipate the obstacle. Paper finding: pre-planned shielding responses produce <b>d = 0.77</b> against derailment (Gollwitzer &amp; Sheeran 2006).</div>
-      <div class="plan-line">
-        <span class="lbl">If</span>
-        <input type="text" data-plan="interruptIf" placeholder="someone messages me / a non-urgent task pops up">
-      </div>
-      <div class="plan-line" style="margin-top:8px">
-        <span class="lbl">then I will</span>
-        <input type="text" data-plan="interruptThen" placeholder="reply 'I'll get back to you at 4 PM' and finish my block">
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>D. For unrealistic plans / running out of steam</h2>
-      <div class="why">Self-talk plan against ego depletion. Paper example: "If I have walked up one flight of stairs and see the elevator, then I will tell myself 'I can do it!'"</div>
-      <div class="plan-line">
-        <span class="lbl">If</span> I
-        <input type="text" data-plan="quitIf" placeholder="feel like quitting before the timer ends">
-      </div>
-      <div class="plan-line" style="margin-top:8px">
-        <span class="lbl">then I will</span>
-        <input type="text" data-plan="quitThen" placeholder="say to myself 'just 5 more minutes' and keep my hand on the page">
-      </div>
-      <div class="why" style="margin-top:8px">Also: cap your daily plan at <b>2/3 of what feels possible</b>. Sheeran &amp; Webb call this the planning fallacy, students chronically over-promise.</div>
-    </div>
-
-    <button class="primary" id="savePlans">Save my if-then plans</button>
+<!-- Add Block Modal -->
+<div class="modal-backdrop" id="modalBackdrop"></div>
+<div class="modal" id="addBlockModal">
+  <h3 id="modalTitle">Add a block</h3>
+  <p class="modal-sub">A specific subject and a real time commitment beats a vague "study session."</p>
+  <label>What will you work on?</label>
+  <input type="text" id="mb-subject" placeholder="e.g. Calc — chapter 5 problems">
+  <label style="margin-top: 16px">How long?</label>
+  <div class="duration-presets" id="durationPresets">
+    <button class="duration-preset" data-min="25">25 min</button>
+    <button class="duration-preset selected" data-min="50">50 min</button>
+    <button class="duration-preset" data-min="90">90 min</button>
+    <button class="duration-preset" data-min="120">2 hrs</button>
   </div>
-
-  <div class="panel" id="panel-review">
-    <div class="research-note">
-      Two evidence stacks meet here. <b>Progress monitoring</b> (Harkin et al. 2016, 138 studies in Sheeran &amp; Webb) is the second-strongest research-backed lever after if-then plans. <b>Newport's shutdown ritual</b> (Deep Work, Rule #1, "Be Lazy") releases the Zeigarnik effect so unfinished tasks stop dominating your evening attention.
-    </div>
-
-    <div class="card">
-      <h2>Newport's shutdown ritual</h2>
-      <div class="why">10–15 min at the end of the work day. Habits in 1–2 weeks. Each step is intentional.</div>
-      <div id="ritual-list"></div>
-      <button class="shutdown-complete" id="shutdownBtn">Shutdown complete.</button>
-    </div>
-
-    <div class="card">
-      <h2>How did today actually go?</h2>
-      <label>One thing that worked</label>
-      <input type="text" id="rev-worked" placeholder="The 9 AM start cue actually got me started today">
-      <label style="margin-top:10px">One thing that derailed me</label>
-      <input type="text" id="rev-derailed" placeholder="Got pulled into a group chat at 11">
-      <label style="margin-top:10px">What if-then plan should I add or change tomorrow?</label>
-      <textarea id="rev-fix" placeholder="If a notification pops up before noon, then I will swipe it away without reading."></textarea>
-    </div>
-
-    <button class="primary" id="saveReview">Log today's review</button>
+  <input type="number" id="mb-duration" min="5" max="480" step="5" value="50" style="margin-top: 8px;" placeholder="Custom minutes">
+  <label style="margin-top: 16px">Depth tag</label>
+  <div class="depth-choice" id="depthChoice">
+    <button class="depth-option deep selected" data-depth="deep">Deep</button>
+    <button class="depth-option shallow" data-depth="shallow">Shallow</button>
+    <button class="depth-option none" data-depth="">Untagged</button>
   </div>
-
-  <div class="panel" id="panel-history">
-    <div class="research-note">
-      4DX scoreboard (Deep Work, Rule #1, "Execute Like a Business"). The <b>lead measure</b> is hours spent in deep work — track the behavior you can change today, not the lag outcome (your grade) months later.
-    </div>
-    <div class="stats">
-      <div class="stat"><div class="stat-num" id="stat-streak">0</div><div class="stat-lbl">day streak</div></div>
-      <div class="stat"><div class="stat-num" id="stat-deep">0</div><div class="stat-lbl">deep hrs this week</div></div>
-      <div class="stat"><div class="stat-num" id="stat-rate">-</div><div class="stat-lbl">avg block completion</div></div>
-    </div>
-
-    <div class="card" style="margin-top:14px">
-      <h2>Deep work scoreboard, last 7 days</h2>
-      <div class="why">Dashed red line = Newport's ~1 hr/day novice target. Push toward 2–4 hrs/day as a ceiling.</div>
-      <div class="score-row" id="score-row"></div>
-    </div>
-
-    <div class="card" style="margin-top:14px">
-      <h2>Last 14 days</h2>
-      <div id="history-list" style="margin-top:8px">
-        <div style="color:#6b7585; font-size:13px;">No history yet. Save a plan on the Today tab to start tracking.</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="panel" id="panel-why">
-    <div class="card">
-      <h2>What the research says</h2>
-      <p style="margin-top:8px; font-size:13px; color:#3d4753;">
-        Four papers converge on the same finding: people don't fail to study because they lack motivation, they fail because <b>good intentions don't automatically translate into action</b>. Sheeran's 2002 meta-analysis showed that intentions explain only about a third of variance in actual behavior, the rest is the gap.
-      </p>
-      <p style="margin-top:10px; font-size:13px; color:#3d4753;">
-        The most reliable fix is the <b>implementation intention</b> (Gollwitzer): a literal "if X, then I will Y" sentence that mentally pre-commits a specific response to a specific cue. Across 94 studies the effect was <b>d = 0.65</b>, bigger than most psychological interventions ever produce.
-      </p>
-      <p style="margin-top:10px; font-size:13px; color:#3d4753;">
-        Three things make if-then plans work: (1) <b>specificity</b>, "study more" doesn't, "open chapter 5 at 9 AM at my desk" does; (2) <b>real cues</b>, time, place, or a specific feeling/urge, not abstract intent; (3) <b>strong underlying goal</b>, if you don't actually want to pass the exam, no formula helps.
-      </p>
-      <p style="margin-top:10px; font-size:13px; color:#3d4753;">
-        Sirois &amp; Pychyl (2013) add the kindness piece: procrastination is short-term mood repair, not laziness. Self-forgiveness for past missed sessions <i>reduces</i> future procrastination. So when a plan flops, log it, adjust the if-then, and move on.
-      </p>
-      <p style="margin-top:14px; font-size:13px; color:#3d4753;">
-        <b>Cal Newport, <i>Deep Work</i> (2016)</b> stacks neatly on top. Where the if-then plans answer "how do I follow through?", Deep Work answers "what should the blocks contain?" Three ideas from the book are baked into this app:
-      </p>
-      <p style="margin-top:8px; font-size:13px; color:#3d4753;">
-        <b>1. Schedule every minute.</b> The empty hour is where intentions die. Newport gives every minute of the workday a job, in 30-min minimum blocks, in a notebook. The Calendar tab is the digital version. <i>"Your goal is not to stick to a given schedule at all costs; it's instead to maintain, at all times, a thoughtful say in what you're doing with your time going forward."</i> When a block breaks, you don't abandon the plan, you redraw it from now.
-      </p>
-      <p style="margin-top:10px; font-size:13px; color:#3d4753;">
-        <b>2. Deep vs shallow.</b> Deep work pushes your limits and is hard to replace. Shallow work is logistical and easy. Newport's heuristic: ask how many months it would take to train a smart college grad to do the task. Many months = deep, a week = shallow. Aim for <b>50–70% deep</b>; novices cap at ~1 hr/day of pure deep work, experts ~4 hrs.
-      </p>
-      <p style="margin-top:10px; font-size:13px; color:#3d4753;">
-        <b>3. Shutdown ritual.</b> Unfinished tasks dominate attention until they're written down with a plan (the Zeigarnik effect, Baumeister &amp; Masicampo). Newport's fix: a 5-step end-of-day routine ending in the literal phrase <i>"Shutdown complete."</i> Habit forms in 1–2 weeks. The Shutdown tab walks you through it.
-      </p>
-      <p style="margin-top:10px; font-size:13px; color:#3d4753;">
-        Bonus: Newport's 4DX scoreboard idea — track <b>lead measures</b> (hours of deep work this week) instead of <b>lag measures</b> (your final grade). The History tab is your scoreboard.
-      </p>
-      <p style="margin-top:14px; font-size:12px; color:#6b7585;">
-        Sources: Sheeran &amp; Webb (2016) <i>The Intention-Behavior Gap</i>; Sheeran (2002) <i>Intention-Behaviour Relations</i>; Gollwitzer &amp; Sheeran (2006) <i>Implementation Intentions and Goal Attainment</i>; Sirois &amp; Pychyl (2013) <i>Procrastination and Short-Term Mood Regulation</i>; Newport (2016) <i>Deep Work</i>.
-      </p>
-    </div>
+  <div class="modal-actions">
+    <button class="btn btn-ghost" id="mb-cancel">Cancel</button>
+    <button class="btn" id="mb-add">Add block</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const LS_KEY = 'studyPlanBridge_v1';
+const LS_KEY = 'studyPlanBridge_v2';
 const todayStr = () => new Date().toISOString().slice(0,10);
+const HOUR_PX = 56;
+const MIN_PX = HOUR_PX / 60;
+const GRID_START_HOUR = 6;
+const GRID_END_HOUR = 24; // exclusive
 
 let state = loadState();
+let currentTab = 'today';
+let modalDuration = 50;
+let modalDepth = 'deep';
 
 function loadState() {
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return { plans: {}, today: null, history: {} };
+    if (raw) {
+      const s = JSON.parse(raw);
+      // Migrate v1 if present
+      const oldRaw = localStorage.getItem('studyPlanBridge_v1');
+      if (!s.today && oldRaw) migrateV1(s, JSON.parse(oldRaw));
+      return s;
+    }
+    const oldRaw = localStorage.getItem('studyPlanBridge_v1');
+    if (oldRaw) {
+      const s = { plans: {}, today: null, history: {} };
+      migrateV1(s, JSON.parse(oldRaw));
+      return s;
+    }
+  } catch (e) { console.warn(e); }
+  return { plans: {}, today: null, history: {}, ritual: { date: '', steps: [false,false,false,false,false], complete: false } };
+}
+function migrateV1(s, old) {
+  s.plans = old.plans || {};
+  s.history = old.history || {};
+  if (old.today) {
+    const blocks = (old.today.blocks || []).filter(b => b.task && b.task.trim()).map(b => {
+      const dur = computeDur(b.start, b.end);
+      return { id: makeId(), subject: b.task, durationMin: dur, depth: b.depth || null, done: !!b.done };
+    });
+    s.today = {
+      date: old.today.date,
+      dayStart: (old.today.blocks && old.today.blocks[0] && old.today.blocks[0].start) || '09:00',
+      goal: old.today.goal || '',
+      startTime: old.today.startTime || '',
+      startPlace: old.today.startPlace || '',
+      startAction: old.today.startAction || '',
+      blocks
+    };
+  }
+  s.ritual = { date: '', steps: [false,false,false,false,false], complete: false };
+}
+function computeDur(start, end) {
+  if (!start || !end) return 50;
+  const [h1,m1] = start.split(':').map(Number);
+  const [h2,m2] = end.split(':').map(Number);
+  return Math.max(5, (h2*60+m2) - (h1*60+m1));
 }
 function saveState() {
   try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
 }
+function makeId() { return 'b_' + Math.random().toString(36).slice(2,10); }
 
-document.querySelectorAll('.tab').forEach(t => {
-  t.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
-    t.classList.add('active');
-    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
-    if (t.dataset.tab === 'history') renderHistory();
-    if (t.dataset.tab === 'calendar') renderCalendar();
-    if (t.dataset.tab === 'review') renderRitual();
+function ensureToday() {
+  if (!state.today || state.today.date !== todayStr()) {
+    state.today = {
+      date: todayStr(),
+      dayStart: '09:00',
+      goal: '',
+      startTime: '', startPlace: '', startAction: '',
+      blocks: []
+    };
+  }
+  if (!state.ritual || state.ritual.date !== todayStr()) {
+    state.ritual = { date: todayStr(), steps: [false,false,false,false,false], complete: false };
+  }
+}
+
+// ─── Time helpers ───
+function timeToMin(t) {
+  if (!t) return 0;
+  const [h, m] = t.split(':').map(Number);
+  return h*60 + m;
+}
+function minToTime(m) {
+  m = ((m % 1440) + 1440) % 1440;
+  return String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+}
+function fmt12(t) {
+  const m = timeToMin(t);
+  let h = Math.floor(m/60), mi = m%60;
+  const ap = h >= 12 ? 'pm' : 'am';
+  h = h % 12 || 12;
+  return mi === 0 ? `${h}${ap}` : `${h}:${String(mi).padStart(2,'0')}${ap}`;
+}
+function fmtDuration(min) {
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min/60), m = min%60;
+  return m === 0 ? `${h} hr` : `${h}h ${m}m`;
+}
+function computedBlocks() {
+  ensureToday();
+  let cursor = timeToMin(state.today.dayStart);
+  return (state.today.blocks || []).map(b => {
+    const startMin = cursor;
+    const endMin = startMin + b.durationMin;
+    cursor = endMin;
+    return { ...b, startMin, endMin };
   });
+}
+
+// ─── Tab navigation w/ paper-flip animation ───
+function showTab(name) {
+  if (name === currentTab) return;
+  const oldEl = document.getElementById('panel-' + currentTab);
+  const newEl = document.getElementById('panel-' + name);
+  oldEl.classList.remove('active');
+  oldEl.classList.add('leaving');
+  newEl.classList.add('active');
+  setTimeout(() => oldEl.classList.remove('leaving'), 320);
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === name);
+  });
+  currentTab = name;
+  if (name === 'calendar') renderCalendar();
+  if (name === 'history') renderHistory();
+  if (name === 'review') renderRitual();
+}
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => showTab(t.dataset.tab));
 });
 
-function defaultBlocks() {
-  return [
-    { start: '09:00', task: '', end: '09:50', done: false },
-    { start: '10:00', task: '', end: '10:50', done: false },
-    { start: '13:00', task: '', end: '13:50', done: false },
-  ];
-}
-function getBlocks() {
-  if (state.today && state.today.date === todayStr()) return state.today.blocks;
-  return defaultBlocks();
-}
-function renderBlocks() {
-  const blocks = getBlocks();
-  const wrap = document.getElementById('blocks');
-  wrap.innerHTML = '';
-  blocks.forEach((b, i) => {
-    const div = document.createElement('div');
-    div.className = 'block' + (b.done ? ' done' : '');
-    div.innerHTML = `
-      <input type="time" value="${b.start}" data-i="${i}" data-f="start">
-      <input type="text" placeholder="What you'll work on" value="${escapeAttr(b.task)}" data-i="${i}" data-f="task">
-      <input type="time" value="${b.end}" data-i="${i}" data-f="end">
-      <input type="checkbox" class="checkbox-big" ${b.done?'checked':''} data-i="${i}" data-f="done" title="Done">
-    `;
-    wrap.appendChild(div);
+// ─── Today: text fields ───
+['goal','startTime','startPlace','startAction'].forEach(id => {
+  document.getElementById(id).addEventListener('input', e => {
+    ensureToday();
+    state.today[id] = e.target.value;
+    saveState();
   });
-  wrap.querySelectorAll('input').forEach(inp => {
-    inp.addEventListener('change', () => {
-      const i = +inp.dataset.i, f = inp.dataset.f;
-      const blocks = getBlocks();
-      if (f === 'done') blocks[i].done = inp.checked;
-      else blocks[i][f] = inp.value;
-      ensureToday();
-      state.today.blocks = blocks;
+});
+document.getElementById('dayStart').addEventListener('change', e => {
+  ensureToday();
+  state.today.dayStart = e.target.value || '09:00';
+  saveState();
+  renderBlocks();
+});
+
+// ─── Today: render blocks ───
+function renderBlocks() {
+  ensureToday();
+  document.getElementById('goal').value = state.today.goal || '';
+  document.getElementById('startTime').value = state.today.startTime || '';
+  document.getElementById('startPlace').value = state.today.startPlace || '';
+  document.getElementById('startAction').value = state.today.startAction || '';
+  document.getElementById('dayStart').value = state.today.dayStart || '09:00';
+
+  const list = document.getElementById('blockList');
+  const blocks = computedBlocks();
+  if (!blocks.length) {
+    list.innerHTML = '<div style="text-align:center; padding:24px; color:var(--ink-faint); font-family:var(--serif); font-style:italic; font-size:13.5px;">No blocks yet. Click below to add your first one.</div>';
+    return;
+  }
+  list.innerHTML = blocks.map((b, i) => `
+    <div class="block-row ${b.done ? 'done' : ''}" data-i="${i}">
+      <button class="depth-pill ${b.depth || ''}" data-depth-i="${i}" title="${b.depth || 'untagged'} — click to cycle"></button>
+      <div class="blk-time">${fmt12(minToTime(b.startMin))}</div>
+      <div>
+        <input class="blk-subject" data-i="${i}" value="${escapeAttr(b.subject)}" placeholder="(no subject)">
+        <div class="blk-duration">${fmtDuration(b.durationMin)} · ends ${fmt12(minToTime(b.endMin))}</div>
+      </div>
+      <input type="checkbox" class="blk-check" data-i="${i}" ${b.done ? 'checked' : ''} title="Done">
+      <button class="blk-delete" data-del-i="${i}" title="Remove">×</button>
+    </div>
+  `).join('');
+
+  // wire up
+  list.querySelectorAll('.blk-check').forEach(c => {
+    c.addEventListener('change', e => {
+      const i = +e.target.dataset.i;
+      state.today.blocks[i].done = e.target.checked;
       saveState();
-      if (f === 'done') renderBlocks();
+      renderBlocks();
+      if (currentTab === 'calendar') renderCalendar();
       checkForgive();
+    });
+  });
+  list.querySelectorAll('.blk-subject').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.i;
+      state.today.blocks[i].subject = e.target.value;
+      saveState();
       renderGcalLinks();
+    });
+  });
+  list.querySelectorAll('.blk-delete').forEach(b => {
+    b.addEventListener('click', e => {
+      const i = +e.target.dataset.delI;
+      state.today.blocks.splice(i, 1);
+      saveState();
+      renderBlocks();
+      if (currentTab === 'calendar') renderCalendar();
+    });
+  });
+  list.querySelectorAll('.depth-pill').forEach(p => {
+    p.addEventListener('click', e => {
+      const i = +e.target.dataset.depthI;
+      const cur = state.today.blocks[i].depth || null;
+      const next = cur === null ? 'deep' : cur === 'deep' ? 'shallow' : null;
+      state.today.blocks[i].depth = next;
+      saveState();
+      renderBlocks();
+      if (currentTab === 'calendar') renderCalendar();
     });
   });
   renderGcalLinks();
 }
-function escapeAttr(s) { return (s||'').replace(/"/g,'&quot;'); }
 
-// --- Calendar export ---
+// ─── Add Block modal ───
+const modal = document.getElementById('addBlockModal');
+const backdrop = document.getElementById('modalBackdrop');
+const subjectInput = document.getElementById('mb-subject');
+const durationInput = document.getElementById('mb-duration');
+
+function openAddBlock() {
+  modalDuration = 50;
+  modalDepth = 'deep';
+  subjectInput.value = '';
+  durationInput.value = '50';
+  document.querySelectorAll('.duration-preset').forEach(p => p.classList.toggle('selected', +p.dataset.min === 50));
+  document.querySelectorAll('.depth-option').forEach(d => d.classList.toggle('selected', d.dataset.depth === 'deep'));
+  modal.classList.add('show');
+  backdrop.classList.add('show');
+  setTimeout(() => subjectInput.focus(), 200);
+}
+function closeAddBlock() {
+  modal.classList.remove('show');
+  backdrop.classList.remove('show');
+}
+function commitBlock() {
+  const subject = subjectInput.value.trim();
+  if (!subject) {
+    subjectInput.focus();
+    toast('Add a subject first.');
+    return;
+  }
+  const dur = Math.max(5, Math.min(480, +durationInput.value || 50));
+  ensureToday();
+  state.today.blocks.push({
+    id: makeId(),
+    subject,
+    durationMin: dur,
+    depth: modalDepth || null,
+    done: false
+  });
+  saveState();
+  closeAddBlock();
+  renderBlocks();
+  if (currentTab === 'calendar') renderCalendar();
+  toast(`Added: ${subject} (${fmtDuration(dur)})`);
+}
+
+document.getElementById('openAddBlock').addEventListener('click', openAddBlock);
+document.getElementById('mb-cancel').addEventListener('click', closeAddBlock);
+backdrop.addEventListener('click', closeAddBlock);
+document.getElementById('mb-add').addEventListener('click', commitBlock);
+modal.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); commitBlock(); }
+  if (e.key === 'Escape') closeAddBlock();
+});
+document.querySelectorAll('.duration-preset').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.duration-preset').forEach(x => x.classList.remove('selected'));
+    p.classList.add('selected');
+    modalDuration = +p.dataset.min;
+    durationInput.value = modalDuration;
+  });
+});
+durationInput.addEventListener('input', () => {
+  document.querySelectorAll('.duration-preset').forEach(p => {
+    p.classList.toggle('selected', +p.dataset.min === +durationInput.value);
+  });
+});
+document.querySelectorAll('.depth-option').forEach(d => {
+  d.addEventListener('click', () => {
+    document.querySelectorAll('.depth-option').forEach(x => x.classList.remove('selected'));
+    d.classList.add('selected');
+    modalDepth = d.dataset.depth;
+  });
+});
+
+// ─── Today buttons ───
+document.getElementById('saveToday').addEventListener('click', () => {
+  ensureToday();
+  const blocks = state.today.blocks || [];
+  const total = blocks.length;
+  const done = blocks.filter(b => b.done).length;
+  const deepMin = blocks.filter(b => b.depth === 'deep').reduce((a,b) => a + b.durationMin, 0);
+  const shallowMin = blocks.filter(b => b.depth === 'shallow').reduce((a,b) => a + b.durationMin, 0);
+  const doneDeepMin = blocks.filter(b => b.depth === 'deep' && b.done).reduce((a,b) => a + b.durationMin, 0);
+  const doneShallowMin = blocks.filter(b => b.depth === 'shallow' && b.done).reduce((a,b) => a + b.durationMin, 0);
+  state.history[todayStr()] = {
+    goal: state.today.goal,
+    total, done,
+    deepMin, shallowMin,
+    doneDeepMin, doneShallowMin,
+    blocks: blocks.map(b => ({...b})),
+  };
+  saveState();
+  toast('Saved. Now go do block 1.');
+  checkForgive();
+});
+document.getElementById('clearToday').addEventListener('click', () => {
+  if (!confirm('Reset today\'s plan?')) return;
+  state.today = null;
+  ensureToday();
+  saveState();
+  renderBlocks();
+});
+
+function checkForgive() {
+  const f = document.getElementById('forgive');
+  ensureToday();
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+  const blocks = computedBlocks();
+  const missed = blocks.filter(b => !b.done && b.endMin < nowMin).length;
+  if (missed >= 2) f.classList.add('show'); else f.classList.remove('show');
+}
+
+// ─── Plans ───
+function hydratePlans() {
+  document.querySelectorAll('[data-plan]').forEach(inp => {
+    inp.value = state.plans[inp.dataset.plan] || '';
+    inp.addEventListener('input', e => {
+      state.plans[inp.dataset.plan] = e.target.value;
+      saveState();
+    });
+  });
+}
+document.getElementById('savePlans').addEventListener('click', () => {
+  saveState();
+  toast('If-then plans saved.');
+});
+
+// ─── Shutdown ritual ───
+const RITUAL_STEPS = [
+  'Capture loose tasks. Glance at any unfinished work and write it down somewhere you\'ll see it tomorrow.',
+  'Skim every active task list. Make sure nothing urgent is hiding.',
+  'Look at the next few days on your calendar. Anything that needs prep?',
+  'Make a rough plan for tomorrow. (You can do this in the Today tab.)',
+  'Say it out loud or in your head: "Shutdown complete."'
+];
+function renderRitual() {
+  ensureToday();
+  const list = document.getElementById('ritual-list');
+  list.innerHTML = RITUAL_STEPS.map((text, i) => `
+    <div class="ritual-step ${state.ritual.steps[i] ? 'done' : ''}">
+      <input type="checkbox" class="ritual-check" data-i="${i}" ${state.ritual.steps[i] ? 'checked' : ''}>
+      <div class="ritual-text"><span class="step-num">${i+1}.</span>${escapeHTML(text)}</div>
+    </div>
+  `).join('');
+  list.querySelectorAll('.ritual-check').forEach(c => {
+    c.addEventListener('change', e => {
+      const i = +e.target.dataset.i;
+      state.ritual.steps[i] = e.target.checked;
+      saveState();
+      renderRitual();
+    });
+  });
+  const all = state.ritual.steps.every(Boolean);
+  const btn = document.getElementById('shutdownBtn');
+  btn.classList.toggle('ready', all);
+  btn.classList.toggle('fired', state.ritual.complete);
+  btn.textContent = state.ritual.complete ? 'Shutdown complete. Rest well.' : 'Shutdown complete.';
+
+  document.getElementById('rev-worked').value = state.ritual.review?.worked || '';
+  document.getElementById('rev-derailed').value = state.ritual.review?.derailed || '';
+  document.getElementById('rev-fix').value = state.ritual.review?.fix || '';
+}
+document.getElementById('shutdownBtn').addEventListener('click', () => {
+  const all = state.ritual.steps.every(Boolean);
+  if (!all) { toast('Walk through all five steps first.'); return; }
+  state.ritual.complete = true;
+  saveState();
+  renderRitual();
+  toast('Done. Computer off, work mind off.');
+});
+document.getElementById('saveReview').addEventListener('click', () => {
+  ensureToday();
+  const review = {
+    worked: document.getElementById('rev-worked').value,
+    derailed: document.getElementById('rev-derailed').value,
+    fix: document.getElementById('rev-fix').value,
+  };
+  state.ritual.review = review;
+  if (!state.history[todayStr()]) {
+    const blocks = state.today.blocks || [];
+    state.history[todayStr()] = {
+      goal: state.today.goal,
+      total: blocks.length,
+      done: blocks.filter(b => b.done).length,
+      deepMin: blocks.filter(b => b.depth==='deep').reduce((a,b)=>a+b.durationMin,0),
+      shallowMin: blocks.filter(b => b.depth==='shallow').reduce((a,b)=>a+b.durationMin,0),
+      doneDeepMin: blocks.filter(b => b.depth==='deep' && b.done).reduce((a,b)=>a+b.durationMin,0),
+      doneShallowMin: blocks.filter(b => b.depth==='shallow' && b.done).reduce((a,b)=>a+b.durationMin,0),
+      blocks: blocks.map(b => ({...b}))
+    };
+  }
+  state.history[todayStr()].review = review;
+  saveState();
+  toast('Logged. Streak counts when you log it.');
+});
+
+// ─── Calendar render ───
+function renderCalendar() {
+  ensureToday();
+  const date = new Date(state.today.date + 'T00:00');
+  document.getElementById('cal-dayname').textContent = date.toLocaleDateString(undefined, { weekday: 'long' });
+  document.getElementById('cal-datestring').textContent = date.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+
+  const blocks = computedBlocks();
+  const totalDeep = blocks.filter(b => b.depth==='deep').reduce((a,b)=>a+b.durationMin,0);
+  const totalShallow = blocks.filter(b => b.depth==='shallow').reduce((a,b)=>a+b.durationMin,0);
+  const totalUntagged = blocks.filter(b => !b.depth).reduce((a,b)=>a+b.durationMin,0);
+
+  document.getElementById('cal-stats').innerHTML = `
+    <div class="stat"><span class="dot deep"></span>Deep: ${fmtDuration(totalDeep)}</div>
+    <div class="stat"><span class="dot shallow"></span>Shallow: ${fmtDuration(totalShallow)}</div>
+    ${totalUntagged ? `<div class="stat"><span class="dot"></span>Untagged: ${fmtDuration(totalUntagged)}</div>` : ''}
+  `;
+
+  const grid = document.getElementById('cal-grid');
+  if (!blocks.length) {
+    grid.innerHTML = '<div class="cal-empty">No blocks yet. Add some on the Today tab.</div>';
+    return;
+  }
+
+  // figure out grid range — at minimum 6 AM to midnight, expand if needed
+  let earliestHour = GRID_START_HOUR, latestHour = GRID_END_HOUR;
+  blocks.forEach(b => {
+    earliestHour = Math.min(earliestHour, Math.floor(b.startMin/60));
+    latestHour = Math.max(latestHour, Math.ceil(b.endMin/60));
+  });
+  earliestHour = Math.max(0, earliestHour);
+  latestHour = Math.min(28, latestHour);
+
+  let html = '';
+  for (let h = earliestHour; h < latestHour; h++) {
+    const hMod = ((h % 24) + 24) % 24;
+    const label = hMod === 0 ? '12am' : hMod < 12 ? `${hMod}am` : hMod === 12 ? '12pm' : `${hMod-12}pm`;
+    html += `<div class="cal-hour"><div class="cal-hour-label">${label}</div><div class="cal-hour-slot"></div></div>`;
+  }
+  // current time line
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+  if (now.toISOString().slice(0,10) === state.today.date && nowMin >= earliestHour*60 && nowMin <= latestHour*60) {
+    const top = (nowMin - earliestHour*60) * MIN_PX;
+    html += `<div class="cal-now" style="top:${top}px"></div>`;
+  }
+
+  grid.innerHTML = html;
+
+  // overlay blocks — append absolutely positioned divs
+  blocks.forEach(b => {
+    const top = (b.startMin - earliestHour*60) * MIN_PX;
+    const height = Math.max(22, b.durationMin * MIN_PX - 2);
+    const cls = b.depth || 'untagged';
+    const block = document.createElement('div');
+    block.className = `cal-block ${cls} ${b.done ? 'done' : ''}`;
+    block.style.top = top + 'px';
+    block.style.height = height + 'px';
+    block.innerHTML = `
+      <div class="cal-block-time">${fmt12(minToTime(b.startMin))} – ${fmt12(minToTime(b.endMin))}</div>
+      <div class="cal-block-subject">${escapeHTML(b.subject || '(no subject)')}</div>
+    `;
+    block.addEventListener('click', () => {
+      const idx = state.today.blocks.findIndex(x => x.id === b.id);
+      if (idx >= 0) {
+        state.today.blocks[idx].done = !state.today.blocks[idx].done;
+        saveState();
+        renderCalendar();
+        checkForgive();
+      }
+    });
+    grid.appendChild(block);
+  });
+}
+
+// ─── History ───
+function renderHistory() {
+  const days = Object.keys(state.history).sort().reverse();
+  document.getElementById('stat-streak').textContent = computeStreak();
+  document.getElementById('stat-deep').textContent = computeDeepHours7d().toFixed(1);
+  const rates = days.map(k => {
+    const h = state.history[k];
+    if (!h.total) return null;
+    return h.done / h.total;
+  }).filter(x => x !== null);
+  document.getElementById('stat-rate').textContent = rates.length
+    ? Math.round((rates.reduce((a,b)=>a+b,0)/rates.length)*100) + '%' : '—';
+
+  // 7-day scoreboard
+  const scoreEl = document.getElementById('score-row');
+  const today = new Date();
+  const last7 = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0,10);
+    const h = state.history[key];
+    last7.push({
+      date: d,
+      key,
+      deepMin: h ? (h.doneDeepMin || 0) : 0,
+      shallowMin: h ? (h.doneShallowMin || 0) : 0,
+    });
+  }
+  const maxMin = Math.max(60, ...last7.map(d => d.deepMin + d.shallowMin), 240);
+  const targetMin = 60;
+  const targetTop = 100 - (targetMin / maxMin) * 100;
+  scoreEl.innerHTML = `
+    <div class="score-target" style="top:${targetTop}%"><span>1 hr</span></div>
+  ` + last7.map(d => {
+    const deepH = (d.deepMin / maxMin) * 100;
+    const shallowH = (d.shallowMin / maxMin) * 100;
+    const lbl = d.date.toLocaleDateString(undefined, { weekday: 'short' }).slice(0,3);
+    return `
+      <div class="score-bar">
+        <div class="score-bar-fill shallow" style="height:${shallowH}%"></div>
+        <div class="score-bar-fill" style="height:${deepH}%"></div>
+        <div class="score-bar-label">${lbl}</div>
+      </div>
+    `;
+  }).join('');
+
+  // 14-day list
+  const list = document.getElementById('history-list');
+  if (!days.length) {
+    list.innerHTML = '<div class="cal-empty">No history yet. Save a plan on the Today tab to start tracking.</div>';
+    return;
+  }
+  list.innerHTML = days.slice(0, 14).map(k => {
+    const h = state.history[k];
+    const pct = h.total ? Math.round((h.done/h.total)*100) : 0;
+    const dt = new Date(k + 'T00:00');
+    const dn = dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    return `
+      <div class="day-row">
+        <div class="day-row-top">
+          <span class="day-name">${dn}</span>
+          <span class="day-pct">${h.done}/${h.total} blocks · ${pct}% · ${fmtDuration(h.doneDeepMin || 0)} deep</span>
+        </div>
+        ${h.goal ? `<div style="color:var(--ink-mute); font-size:13px;">${escapeHTML(h.goal)}</div>` : ''}
+        <div class="day-bar-wrap"><div class="day-bar" style="width:${pct}%"></div></div>
+        ${h.review && h.review.fix ? `<div class="day-fix">Tomorrow: ${escapeHTML(h.review.fix)}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+function computeStreak() {
+  let streak = 0;
+  const d = new Date();
+  while (true) {
+    const k = d.toISOString().slice(0,10);
+    const h = state.history[k];
+    if (h && (h.done > 0 || h.review)) { streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+function computeDeepHours7d() {
+  let total = 0;
+  const today = new Date();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0,10);
+    const h = state.history[key];
+    if (h) total += (h.doneDeepMin || 0);
+  }
+  return total / 60;
+}
+
+// ─── Calendar export ───
 function pad(n) { return String(n).padStart(2,'0'); }
 function fmtLocal(date, time) {
   const [y,m,d] = date.split('-');
@@ -607,34 +2101,23 @@ function fmtUTCNow() {
        + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + 'Z';
 }
 function escapeICS(s) {
-  return (s||'').replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n')
-                .replace(/;/g,'\\;').replace(/,/g,'\\,');
-}
-function validBlocks() {
-  const blocks = (state.today && state.today.blocks) || [];
-  return blocks.filter(b => b.task && b.task.trim() && b.start && b.end);
+  return (s||'').replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n').replace(/;/g,'\\;').replace(/,/g,'\\,');
 }
 function buildICS(asTodos) {
-  const events = validBlocks();
-  if (!events.length) return null;
+  const blocks = computedBlocks();
+  if (!blocks.length) return null;
   const date = todayStr();
   const goal = (state.today && state.today.goal) || '';
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Study Plan Bridge//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH'
-  ];
-  events.forEach((b, i) => {
+  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Study Plan Bridge//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+  blocks.forEach((b, i) => {
     const uid = `${date}-${i}-${Math.random().toString(36).slice(2,8)}@studyplanbridge`;
-    const summary = escapeICS('Study: ' + b.task);
+    const summary = escapeICS('Study: ' + (b.subject || 'block'));
     const description = goal ? escapeICS('Goal: ' + goal) : '';
     if (asTodos) {
       lines.push('BEGIN:VTODO');
       lines.push('UID:' + uid);
       lines.push('DTSTAMP:' + fmtUTCNow());
-      lines.push('DUE:' + fmtLocal(date, b.end));
+      lines.push('DUE:' + fmtLocal(date, minToTime(b.endMin)));
       lines.push('SUMMARY:' + summary);
       if (description) lines.push('DESCRIPTION:' + description);
       lines.push('STATUS:NEEDS-ACTION');
@@ -643,8 +2126,8 @@ function buildICS(asTodos) {
       lines.push('BEGIN:VEVENT');
       lines.push('UID:' + uid);
       lines.push('DTSTAMP:' + fmtUTCNow());
-      lines.push('DTSTART:' + fmtLocal(date, b.start));
-      lines.push('DTEND:' + fmtLocal(date, b.end));
+      lines.push('DTSTART:' + fmtLocal(date, minToTime(b.startMin)));
+      lines.push('DTEND:' + fmtLocal(date, minToTime(b.endMin)));
       lines.push('SUMMARY:' + summary);
       if (description) lines.push('DESCRIPTION:' + description);
       lines.push('END:VEVENT');
@@ -655,7 +2138,7 @@ function buildICS(asTodos) {
 }
 function downloadICS(asTodos) {
   const ics = buildICS(asTodos);
-  if (!ics) { toast('Add some blocks with times and tasks first.'); return; }
+  if (!ics) { toast('Add some blocks first.'); return; }
   const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -666,15 +2149,15 @@ function downloadICS(asTodos) {
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
   toast(asTodos ? 'Reminders file downloaded.' : 'Calendar file downloaded.');
 }
+document.getElementById('downloadIcs').addEventListener('click', () => downloadICS(false));
+document.getElementById('downloadIcsTodo').addEventListener('click', () => downloadICS(true));
 function gcalUrl(b) {
   const date = todayStr();
   const goal = (state.today && state.today.goal) || '';
-  const start = fmtLocal(date, b.start);
-  const end = fmtLocal(date, b.end);
   const params = new URLSearchParams({
     action: 'TEMPLATE',
-    text: 'Study: ' + b.task,
-    dates: `${start}/${end}`,
+    text: 'Study: ' + (b.subject || 'block'),
+    dates: `${fmtLocal(date, minToTime(b.startMin))}/${fmtLocal(date, minToTime(b.endMin))}`,
   });
   if (goal) params.set('details', 'Goal: ' + goal);
   return 'https://calendar.google.com/calendar/render?' + params.toString();
@@ -682,197 +2165,33 @@ function gcalUrl(b) {
 function renderGcalLinks() {
   const wrap = document.getElementById('gcalLinks');
   if (!wrap) return;
-  const valid = validBlocks();
-  if (!valid.length) {
-    wrap.innerHTML = '<span style="color:#8a92a0; font-size:12px;">Fill in block times + tasks above to see one-click Google links.</span>';
+  const blocks = computedBlocks().filter(b => b.subject && b.subject.trim());
+  if (!blocks.length) {
+    wrap.innerHTML = '<span style="color:var(--ink-faint); font-size:12px; font-style:italic; font-family:var(--serif);">Fill in blocks to see one-click Google links.</span>';
     return;
   }
-  wrap.innerHTML = valid.map(b =>
-    `<a href="${gcalUrl(b)}" target="_blank" rel="noopener" style="display:inline-block; margin:4px 6px 0 0; padding:5px 10px; border:1px solid #d6d9e0; border-radius:4px; font-size:12px; color:#2d5a3d; text-decoration:none; background:#f6faf7;">+ ${escapeHTML(b.task)} <span style="color:#6b7585;">(${b.start})</span></a>`
+  wrap.innerHTML = blocks.map(b =>
+    `<a class="gcal-link" href="${gcalUrl(b)}" target="_blank" rel="noopener">+ ${escapeHTML(b.subject)} <span style="opacity:0.6;">(${fmt12(minToTime(b.startMin))})</span></a>`
   ).join('');
 }
-document.getElementById('downloadIcs').addEventListener('click', () => downloadICS(false));
-document.getElementById('downloadIcsTodo').addEventListener('click', () => downloadICS(true));
 
-document.getElementById('addBlock').addEventListener('click', () => {
-  ensureToday();
-  state.today.blocks.push({ start:'', task:'', end:'', done:false });
-  saveState();
-  renderBlocks();
-});
-
-function ensureToday() {
-  if (!state.today || state.today.date !== todayStr()) {
-    state.today = {
-      date: todayStr(),
-      blocks: defaultBlocks(),
-      goal: '',
-      startTime: '',
-      startPlace: '',
-      startAction: '',
-    };
-  }
-}
-
-function hydrateToday() {
-  ensureToday();
-  document.getElementById('goal').value = state.today.goal || '';
-  document.getElementById('startTime').value = state.today.startTime || '';
-  document.getElementById('startPlace').value = state.today.startPlace || '';
-  document.getElementById('startAction').value = state.today.startAction || '';
-  renderBlocks();
-}
-['goal','startTime','startPlace','startAction'].forEach(id => {
-  document.getElementById(id).addEventListener('input', e => {
-    ensureToday();
-    state.today[id] = e.target.value;
-    saveState();
-    if (id === 'goal') renderGcalLinks();
-  });
-});
-
-document.getElementById('saveToday').addEventListener('click', () => {
-  ensureToday();
-  const blocks = state.today.blocks || [];
-  const total = blocks.filter(b => b.task.trim()).length;
-  const done = blocks.filter(b => b.task.trim() && b.done).length;
-  state.history[todayStr()] = {
-    goal: state.today.goal,
-    total, done,
-    blocks: blocks.map(b => ({...b})),
-  };
-  saveState();
-  toast('Saved. Now go do block 1.');
-  checkForgive();
-});
-
-document.getElementById('clearToday').addEventListener('click', () => {
-  if (!confirm('Reset today\'s plan?')) return;
-  state.today = null;
-  ensureToday();
-  saveState();
-  hydrateToday();
-});
-
-function checkForgive() {
-  const f = document.getElementById('forgive');
-  if (!state.today) return;
-  const now = new Date();
-  const hour = now.getHours();
-  const blocks = state.today.blocks || [];
-  const missed = blocks.filter(b => {
-    if (!b.task.trim() || b.done || !b.end) return false;
-    const [h,m] = b.end.split(':').map(Number);
-    const blockEnd = h*60 + m;
-    const nowMin = hour*60 + now.getMinutes();
-    return nowMin > blockEnd;
-  }).length;
-  if (missed >= 2) f.classList.add('show'); else f.classList.remove('show');
-}
-
-function hydratePlans() {
-  document.querySelectorAll('[data-plan]').forEach(inp => {
-    inp.value = state.plans[inp.dataset.plan] || '';
-    inp.addEventListener('input', e => {
-      state.plans[inp.dataset.plan] = e.target.value;
-      saveState();
-    });
-  });
-}
-document.getElementById('savePlans').addEventListener('click', () => {
-  saveState();
-  toast('If-then plans saved. They live in this browser.');
-});
-
-document.getElementById('saveReview').addEventListener('click', () => {
-  ensureToday();
-  const review = {
-    worked: document.getElementById('rev-worked').value,
-    derailed: document.getElementById('rev-derailed').value,
-    fix: document.getElementById('rev-fix').value,
-  };
-  if (!state.history[todayStr()]) {
-    const blocks = state.today.blocks || [];
-    const total = blocks.filter(b => b.task.trim()).length;
-    const done = blocks.filter(b => b.task.trim() && b.done).length;
-    state.history[todayStr()] = {
-      goal: state.today.goal, total, done,
-      blocks: blocks.map(b => ({...b})),
-    };
-  }
-  state.history[todayStr()].review = review;
-  saveState();
-  document.getElementById('rev-worked').value = '';
-  document.getElementById('rev-derailed').value = '';
-  document.getElementById('rev-fix').value = '';
-  toast('Logged. Streak counts only when you log it.');
-});
-
-function renderHistory() {
-  const days = Object.keys(state.history).sort().reverse();
-  document.getElementById('stat-days').textContent = days.length;
-
-  let streak = 0;
-  const d = new Date();
-  while (true) {
-    const k = d.toISOString().slice(0,10);
-    const h = state.history[k];
-    if (h && (h.done > 0 || h.review)) { streak++; d.setDate(d.getDate()-1); }
-    else break;
-  }
-  document.getElementById('stat-streak').textContent = streak;
-
-  const rates = days.map(k => {
-    const h = state.history[k];
-    if (!h.total) return null;
-    return h.done / h.total;
-  }).filter(x => x !== null);
-  if (rates.length) {
-    const avg = rates.reduce((a,b)=>a+b,0) / rates.length;
-    document.getElementById('stat-rate').textContent = Math.round(avg*100) + '%';
-  }
-
-  const list = document.getElementById('history-list');
-  if (!days.length) return;
-  list.innerHTML = '';
-  days.slice(0, 14).forEach(k => {
-    const h = state.history[k];
-    const pct = h.total ? Math.round((h.done/h.total)*100) : 0;
-    const row = document.createElement('div');
-    row.className = 'day-row';
-    row.style.flexDirection = 'column';
-    row.style.alignItems = 'stretch';
-    row.innerHTML = `
-      <div style="display:flex; justify-content:space-between; gap:10px;">
-        <div style="font-weight:500;">${formatDate(k)}</div>
-        <div style="color:#6b7585;">${h.done}/${h.total} blocks &middot; ${pct}%</div>
-      </div>
-      ${h.goal ? `<div style="color:#5a6677; font-size:12px; margin-top:2px;">${escapeHTML(h.goal)}</div>` : ''}
-      <div class="day-bar-wrap"><div class="day-bar" style="width:${pct}%"></div></div>
-      ${h.review && h.review.fix ? `<div style="font-size:12px; color:#604c2a; margin-top:6px; font-style:italic;">Tomorrow: ${escapeHTML(h.review.fix)}</div>` : ''}
-    `;
-    list.appendChild(row);
-  });
-}
-function formatDate(k) {
-  const d = new Date(k + 'T00:00');
-  const opts = { weekday: 'short', month: 'short', day: 'numeric' };
-  return d.toLocaleDateString(undefined, opts);
-}
+// ─── Helpers ───
+function escapeAttr(s) { return (s||'').replace(/"/g,'&quot;'); }
 function escapeHTML(s) {
   return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 }
-
 let toastT;
 function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastT);
-  toastT = setTimeout(() => el.classList.remove('show'), 2200);
+  toastT = setTimeout(() => el.classList.remove('show'), 2400);
 }
 
-hydrateToday();
+// ─── Init ───
+ensureToday();
+renderBlocks();
 hydratePlans();
 checkForgive();
 setInterval(checkForgive, 60000);
